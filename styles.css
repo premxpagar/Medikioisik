@@ -1,0 +1,168 @@
+/* Fortis Healthcare Official Website Theme & MediKiosk Styles */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800&family=Mukta:wght@400;500;600;700&display=swap');
+
+:root {
+  --fortis-green: #0CA854;
+  --fortis-green-dark: #087F3F;
+  --fortis-green-light: #E8F8F0;
+  --fortis-green-hover: #099449;
+  --fortis-red: #E83035;
+  --fortis-red-light: #FDECEC;
+  --fortis-navy: #0F2942;
+  --fortis-blue: #005696;
+  --fortis-gold: #F59E0B;
+  --fortis-dark: #1E293B;
+  --fortis-gray: #F8FAFC;
+  --fortis-border: #E2E8F0;
+}
+
+body {
+  font-family: 'Inter', 'Mukta', sans-serif;
+  color: #1E293B;
+  background-color: #F8FAFC;
+  -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, .font-heading {
+  font-family: 'Poppins', 'Mukta', sans-serif;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #F1F5F9;
+}
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* Laser Scanner Animation for OCR */
+@keyframes laserScan {
+  0% {
+    top: 0%;
+    opacity: 0.8;
+  }
+  50% {
+    top: 96%;
+    opacity: 1;
+  }
+  100% {
+    top: 0%;
+    opacity: 0.8;
+  }
+}
+
+.laser-beam {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, rgba(12, 168, 84, 0) 0%, #0CA854 50%, rgba(12, 168, 84, 0) 100%);
+  box-shadow: 0 0 15px 4px rgba(12, 168, 84, 0.7);
+  animation: laserScan 2.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Audio Waveform Ripple Animation */
+@keyframes soundRipple {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+}
+
+.voice-ripple {
+  animation: soundRipple 1.4s ease-in-out infinite;
+}
+
+@keyframes waveBar {
+  0%, 100% { height: 6px; }
+  50% { height: 28px; }
+}
+
+.wave-bar {
+  animation: waveBar 0.8s ease-in-out infinite;
+}
+.wave-bar:nth-child(2) { animation-delay: 0.15s; }
+.wave-bar:nth-child(3) { animation-delay: 0.3s; }
+.wave-bar:nth-child(4) { animation-delay: 0.45s; }
+.wave-bar:nth-child(5) { animation-delay: 0.2s; }
+.wave-bar:nth-child(6) { animation-delay: 0.35s; }
+
+/* Red Flag Emergency Pulse */
+@keyframes redFlagPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(232, 48, 53, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 0 16px rgba(232, 48, 53, 0);
+  }
+}
+
+.red-flag-pulse {
+  animation: redFlagPulse 1.8s infinite;
+}
+
+/* Kiosk Button Press Physics */
+.kiosk-btn {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+}
+.kiosk-btn:active {
+  transform: scale(0.97);
+}
+
+/* Floating Sidebar Actions */
+.floating-action-btn {
+  transition: all 0.2s ease-in-out;
+}
+.floating-action-btn:hover {
+  transform: translateX(-4px);
+}
+
+/* Hero Carousel and Card Transitions */
+.hero-gradient {
+  background: linear-gradient(135deg, #0F2942 0%, #0F395A 50%, #0A5A35 100%);
+}
+
+.card-hover-lift {
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.card-hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+}
+
+/* Print Styling */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .print-shadow-none {
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+  }
+}
