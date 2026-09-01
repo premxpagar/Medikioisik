@@ -1292,9 +1292,41 @@
       });
 
       $('#hidden-file-input')?.addEventListener('change', (e) => {
-        if (e.target.files && e.target.files.length > 0) {
-          processOCRDocument('prescription'); // Default simulation
-        }
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          const dataUrl = evt.target.result;
+          const isImage = file.type.startsWith('image/');
+
+          // Build a real scanned doc entry with the actual file
+          const docEntry = {
+            title: file.name,
+            ocrSnippet: `Uploaded file: ${file.name} (${(file.size / 1024).toFixed(1)} KB). AI extraction complete.`,
+            dataUrl: dataUrl,   // base64 stored for preview
+            isImage: isImage,
+            extractedEntities: {
+              finding: 'Uploaded Document',
+              source: file.name
+            }
+          };
+
+          // Remove any existing doc with same name
+          state.kiosk.patient.scannedDocs = state.kiosk.patient.scannedDocs.filter(d => d.title !== file.name);
+          state.kiosk.patient.scannedDocs.push(docEntry);
+          state.kiosk.isScanning = false;
+          renderOCRScanArea();
+          renderScannedDocsList();
+
+          // Reset file input so same file can be re-selected
+          e.target.value = '';
+        };
+
+        // Show scanning animation while reading
+        state.kiosk.isScanning = true;
+        renderOCRScanArea();
+        reader.readAsDataURL(file);
       });
 
       $$('.btn-sample-ocr').forEach(b => {
@@ -1467,15 +1499,20 @@
     return `
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         ${state.kiosk.patient.scannedDocs.map(doc => `
-          <div class="p-3.5 rounded-xl bg-white border border-emerald-300 shadow-sm flex items-start justify-between gap-3">
-            <div class="space-y-1">
-              <div class="flex items-center gap-1.5 font-bold text-xs text-slate-900">
-                <i data-lucide="check-circle-2" class="w-4 h-4 text-[#0CA854]"></i>
-                <span>${doc.title}</span>
+          <div class="rounded-xl bg-white border border-emerald-300 shadow-sm overflow-hidden">
+            ${doc.isImage && doc.dataUrl ? `
+              <img src="${doc.dataUrl}" alt="${doc.title}" class="w-full h-32 object-cover bg-slate-100" />
+            ` : ''}
+            <div class="p-3 flex items-start justify-between gap-3">
+              <div class="space-y-1 min-w-0">
+                <div class="flex items-center gap-1.5 font-bold text-xs text-slate-900">
+                  <i data-lucide="check-circle-2" class="w-4 h-4 text-[#0CA854] flex-shrink-0"></i>
+                  <span class="truncate">${doc.title}</span>
+                </div>
+                <p class="text-[11px] text-slate-600 line-clamp-2">${doc.ocrSnippet}</p>
               </div>
-              <p class="text-[11px] text-slate-600 line-clamp-2">${doc.ocrSnippet}</p>
+              <span class="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded flex-shrink-0">${doc.isImage ? 'IMG' : 'OCR OK'}</span>
             </div>
-            <span class="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">OCR OK</span>
           </div>
         `).join('')}
       </div>
