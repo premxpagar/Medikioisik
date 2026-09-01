@@ -882,34 +882,6 @@
             <span>${getI18n('btnNext')}</span>
           </button>
         </div>
-
-        <!-- Visit History from this device -->
-        ${(() => {
-          const allPats = window.SyncEngine ? window.SyncEngine.getPatients() : [];
-          // Only show patients who were added via kiosk (have a token number)
-          const history = allPats.filter(p => p.token);
-          if (!history.length) return '';
-          return `
-            <div class="border-t border-slate-100 pt-5 space-y-3">
-              <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
-                <i data-lucide="history" class="w-3.5 h-3.5"></i> Recent Check-ins on this Device
-              </h4>
-              <div class="space-y-2">
-                ${history.slice(0, 5).map(p => `
-                  <div class="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm">
-                    <div>
-                      <div class="font-bold text-slate-900">${p.name}</div>
-                      <div class="text-[11px] text-slate-500 mt-0.5">${p.token} · ${p.checkInTime || ''} · ${p.doctorName || p.doctor || ''}</div>
-                    </div>
-                    <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${p.triageLevel === 'EMERGENCY_RED_FLAG' ? 'bg-rose-100 text-rose-700' : p.triageLevel === 'URGENT' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}">
-                      ${p.triageLevel === 'EMERGENCY_RED_FLAG' ? 'EMERGENCY' : p.triageLevel || 'ROUTINE'}
-                    </span>
-                  </div>
-                `).join('')}
-              </div>
-            </div>
-          `;
-        })()}
       `;
 
       $('#btn-quick-fill-demo')?.addEventListener('click', () => {
