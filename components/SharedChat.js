@@ -3,7 +3,7 @@ function RenderChatUI(patientId, currentUserRole, doctorName = "Doctor") {
   const user = JSON.parse(localStorage.getItem('careforge_user'));
   
   return `
-    <div id="chat-container" class="flex flex-col h-[400px] bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex-1">
+    <div id="chat-container" class="flex flex-col min-h-[300px] bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex-1">
       <div class="px-4 py-3 bg-[#0F2942] text-white flex items-center justify-between">
         <h3 class="font-bold text-sm flex items-center gap-2">
           <i data-lucide="message-square" class="w-4 h-4"></i>

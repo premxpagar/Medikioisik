@@ -1253,6 +1253,23 @@
               New Patient
             </button>
           </div>
+
+          <!-- Inline Chat with Doctor -->
+          <div class="max-w-md mx-auto mt-4 w-full">
+            <div class="flex items-center gap-3 mb-3 px-1">
+              <div class="w-8 h-8 rounded-full bg-[#0CA854]/10 flex items-center justify-center">
+                <i data-lucide="message-circle" class="w-4 h-4 text-[#0CA854]"></i>
+              </div>
+              <div>
+                <h4 class="text-sm font-bold text-slate-900">Live Chat with ${token.doctorName}</h4>
+                <p class="text-[10px] text-slate-500">Send a message — your doctor can respond from their dashboard</p>
+              </div>
+              <span class="ml-auto flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Live
+              </span>
+            </div>
+            <div id="kiosk-chat-root" class="w-full"></div>
+          </div>
         </div>
       `;
 
@@ -1262,6 +1279,27 @@
         overlay.classList.remove('hidden');
         overlay.classList.add('flex');
       }
+
+      // Mount inline chat on receipt screen
+      const kioskChatRoot = document.getElementById('kiosk-chat-root');
+      const kioskToken = state.kiosk.generatedToken;
+      function renderKioskChat() {
+        if (kioskChatRoot && kioskToken && typeof RenderChatUI !== 'undefined') {
+          kioskChatRoot.innerHTML = RenderChatUI(kioskToken.id, 'PATIENT', kioskToken.doctorName || 'Doctor');
+          if (typeof AttachChatListeners !== 'undefined') AttachChatListeners();
+          if (window.lucide) window.lucide.createIcons();
+        }
+      }
+      renderKioskChat();
+
+      // Listen for doctor replies and auto-refresh the inline chat
+      window.addEventListener('careforge_sync_updated', function onKioskChatSync() {
+        if (state.kiosk.step !== 7) {
+          window.removeEventListener('careforge_sync_updated', onKioskChatSync);
+          return;
+        }
+        renderKioskChat();
+      });
 
       $('#btn-print-token')?.addEventListener('click', () => {
         window.print();
