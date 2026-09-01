@@ -7,9 +7,12 @@ function GetDoctorNav() {
 
 function RenderDoctorHome() {
   const user = JSON.parse(localStorage.getItem('careforge_user'));
-  const patients = window.MOCK_DATA.patients.filter(p => p.doctor === user.name);
+  const allPatients = window.MOCK_DATA.patients || [];
+  // Show patients assigned to this doctor, or all if none match (fallback for demo)
+  const assignedPatients = allPatients.filter(p => p.doctor === user.name || p.doctorName === user.name);
+  const patients = assignedPatients.length > 0 ? assignedPatients : allPatients;
   
-  const readyCount = patients.filter(p => p.status === 'Ready for Review').length;
+  const readyCount = patients.filter(p => p.status === 'Ready for Review' || p.status === 'Waiting').length;
   const underConsultCount = patients.filter(p => p.status === 'Under Consultation').length;
   const completedCount = patients.filter(p => p.status === 'Completed').length;
 
