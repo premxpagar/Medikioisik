@@ -84,6 +84,7 @@ const AppRouter = {
     if (this.currentPath === 'organization/doctors') return RenderOrgDoctors();
     if (this.currentPath === 'organization/patients') return RenderOrgPatients();
     if (this.currentPath === 'organization/appointments') return RenderOrgAppointments();
+    if (this.currentPath === 'organization/billing') return RenderOrgBilling();
     if (this.currentPath === 'organization/alerts') return RenderOrgAlerts();
     return RenderOrgHome();
   },
@@ -93,6 +94,7 @@ const AppRouter = {
     else if (this.currentPath === 'organization/doctors') AttachOrgDoctorsListeners();
     else if (this.currentPath === 'organization/patients') AttachOrgPatientsListeners();
     else if (this.currentPath === 'organization/appointments') AttachOrgAppointmentsListeners();
+    else if (this.currentPath === 'organization/billing') AttachOrgBillingListeners();
     else if (this.currentPath === 'organization/alerts') AttachOrgAlertsListeners();
   },
 
@@ -105,8 +107,10 @@ const AppRouter = {
     const panel = document.getElementById('patient-sync-panel');
     const tabChat = document.getElementById('tab-chat');
     const tabRx = document.getElementById('tab-rx');
+    const tabInsurance = document.getElementById('tab-insurance');
     const panelChat = document.getElementById('panel-chat');
     const panelRx = document.getElementById('panel-rx');
+    const panelInsurance = document.getElementById('panel-insurance');
 
     // The overlay button is hidden by default.
     // It will be shown by app.js when the patient completes OPD booking (step 6).
@@ -125,21 +129,42 @@ const AppRouter = {
 
     // Tab switching
     tabChat.onclick = () => {
-      tabChat.className = "flex-1 py-3 text-sm font-bold text-[#0CA854] border-b-2 border-[#0CA854]";
-      tabRx.className = "flex-1 py-3 text-sm font-bold text-slate-500 hover:text-slate-700";
+      tabChat.className = "flex-1 py-3 text-xs font-bold text-[#0CA854] border-b-2 border-[#0CA854]";
+      tabRx.className = "flex-1 py-3 text-xs font-bold text-slate-500 hover:text-slate-700";
+      tabInsurance.className = "flex-1 py-3 text-xs font-bold text-slate-500 hover:text-slate-700";
+      
       panelChat.classList.remove('hidden');
       panelChat.classList.add('flex');
       panelRx.classList.add('hidden');
       panelRx.classList.remove('flex');
+      panelInsurance.classList.add('hidden');
+      panelInsurance.classList.remove('flex');
     };
 
     tabRx.onclick = () => {
-      tabRx.className = "flex-1 py-3 text-sm font-bold text-[#0CA854] border-b-2 border-[#0CA854]";
-      tabChat.className = "flex-1 py-3 text-sm font-bold text-slate-500 hover:text-slate-700";
+      tabRx.className = "flex-1 py-3 text-xs font-bold text-[#0CA854] border-b-2 border-[#0CA854]";
+      tabChat.className = "flex-1 py-3 text-xs font-bold text-slate-500 hover:text-slate-700";
+      tabInsurance.className = "flex-1 py-3 text-xs font-bold text-slate-500 hover:text-slate-700";
+      
       panelRx.classList.remove('hidden');
       panelRx.classList.add('flex');
       panelChat.classList.add('hidden');
       panelChat.classList.remove('flex');
+      panelInsurance.classList.add('hidden');
+      panelInsurance.classList.remove('flex');
+    };
+
+    tabInsurance.onclick = () => {
+      tabInsurance.className = "flex-1 py-3 text-xs font-bold text-[#0CA854] border-b-2 border-[#0CA854]";
+      tabChat.className = "flex-1 py-3 text-xs font-bold text-slate-500 hover:text-slate-700";
+      tabRx.className = "flex-1 py-3 text-xs font-bold text-slate-500 hover:text-slate-700";
+      
+      panelInsurance.classList.remove('hidden');
+      panelInsurance.classList.add('flex');
+      panelChat.classList.add('hidden');
+      panelChat.classList.remove('flex');
+      panelRx.classList.add('hidden');
+      panelRx.classList.remove('flex');
     };
 
     // Global listener for cross-tab sync updates
@@ -176,6 +201,49 @@ const AppRouter = {
           <div class="text-[10px] text-slate-500 mt-2 italic">Prescribed by ${rx.doctorName}</div>
         </div>
       `).join('');
+    }
+
+    // Render Insurance
+    const panelInsurance = document.getElementById('panel-insurance');
+    const patObj = window.MOCK_DATA.patients.find(p => p.id === patientId);
+    if (patObj && patObj.billing) {
+      const b = patObj.billing;
+      panelInsurance.innerHTML = `
+        <div class="bg-blue-50/50 p-4 rounded-xl border border-blue-100 flex flex-col gap-1 items-center text-center">
+          <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Bill Amount</span>
+          <span class="text-3xl font-black text-slate-900">₹${b.amount.toFixed(2)}</span>
+          <span class="inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase mt-1 ${b.paymentStatus === 'Paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">${b.paymentStatus}</span>
+        </div>
+        
+        <div class="space-y-4 pt-4 border-t border-slate-100">
+          <h3 class="text-sm font-bold text-slate-900">Insurance Claim Status</h3>
+          
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-slate-500 font-medium">Provider</span>
+            <span class="font-bold text-slate-900">${b.insuranceProvider}</span>
+          </div>
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-slate-500 font-medium">Policy No.</span>
+            <span class="font-mono text-slate-700 text-xs">${b.policyNumber}</span>
+          </div>
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-slate-500 font-medium">Claim Status</span>
+            <span class="inline-flex px-2 py-1 rounded-md text-xs font-bold ${
+              b.claimStatus === 'Approved' ? 'bg-emerald-100 text-emerald-700' :
+              b.claimStatus === 'Rejected' ? 'bg-rose-100 text-rose-700' :
+              'bg-amber-100 text-amber-700'
+            }">${b.claimStatus}</span>
+          </div>
+        </div>
+        
+        <div class="mt-auto pt-4">
+          <button class="w-full py-3 bg-[#0F2942] hover:bg-slate-800 text-white text-xs font-bold rounded-xl shadow-md transition-all">
+            Pay Remaining Balance
+          </button>
+        </div>
+      `;
+    } else {
+      panelInsurance.innerHTML = `<div class="text-center text-xs text-slate-500 mt-4">No billing information found.</div>`;
     }
 
     if (window.lucide) window.lucide.createIcons();

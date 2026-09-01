@@ -17,7 +17,14 @@ window.MOCK_DATA.patients = [
     timeline: ["10:00 AM: Arrived at clinic", "10:15 AM: Vitals taken", "10:30 AM: Ready for review"],
     status: "Ready for Review",
     doctor: "Dr. Arjun Sharma",
-    department: "General Medicine"
+    department: "General Medicine",
+    billing: {
+      amount: 1500.00,
+      insuranceProvider: 'Star Health Insurance',
+      policyNumber: 'SH-8842-1920',
+      claimStatus: 'Pending',
+      paymentStatus: 'Unpaid'
+    }
   },
   {
     id: "pat-2",
@@ -36,7 +43,14 @@ window.MOCK_DATA.patients = [
     timeline: ["10:45 AM: Arrived at clinic", "11:00 AM: Ready for review"],
     status: "Ready for Review",
     doctor: "Dr. Neha Patel",
-    department: "Cardiology"
+    department: "Cardiology",
+    billing: {
+      amount: 850.00,
+      insuranceProvider: 'HDFC ERGO',
+      policyNumber: 'HD-9912-3341',
+      claimStatus: 'Approved',
+      paymentStatus: 'Paid'
+    }
   },
   {
     id: "pat-3",
@@ -55,7 +69,14 @@ window.MOCK_DATA.patients = [
     timeline: ["11:20 AM: Arrived at clinic", "11:30 AM: Consultation started"],
     status: "Under Consultation",
     doctor: "Dr. Amit Shah",
-    department: "Orthopedics"
+    department: "Orthopedics",
+    billing: {
+      amount: 2200.00,
+      insuranceProvider: 'ICICI Lombard',
+      policyNumber: 'IC-5541-0021',
+      claimStatus: 'Rejected',
+      paymentStatus: 'Unpaid'
+    }
   },
   {
     id: "pat-4",
@@ -74,6 +95,13 @@ window.MOCK_DATA.patients = [
     timeline: ["11:50 AM: Arrived at clinic", "12:00 PM: Consultation completed"],
     status: "Completed",
     doctor: "Dr. Arjun Sharma",
-    department: "General Medicine"
+    department: "General Medicine",
+    billing: {
+      amount: 500.00,
+      insuranceProvider: 'Out of Pocket',
+      policyNumber: 'N/A',
+      claimStatus: 'N/A',
+      paymentStatus: 'Paid'
+    }
   }
 ];

@@ -293,7 +293,14 @@
       aiSummary: summary,
       doctorNotes: '',
       finalDiagnosis: '',
-      status: 'Waiting'
+      status: 'Waiting',
+      billing: {
+        amount: state.kiosk.isRedFlagTriggered ? 5000.00 : 1500.00,
+        insuranceProvider: p.insurance || 'Walk-in / Cash',
+        policyNumber: 'N/A',
+        claimStatus: 'Pending',
+        paymentStatus: 'Unpaid'
+      }
     };
 
     state.kiosk.generatedToken = tokenObj;
