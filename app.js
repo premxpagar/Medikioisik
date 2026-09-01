@@ -296,10 +296,15 @@
 
     state.kiosk.generatedToken = tokenObj;
 
-    if (triageLevel === 'EMERGENCY_RED_FLAG') {
-      state.doctor.patients.unshift(tokenObj);
+    if (window.SyncEngine) {
+      window.SyncEngine.addPatient(tokenObj);
+      state.doctor.patients = window.SyncEngine.getPatients();
     } else {
-      state.doctor.patients.push(tokenObj);
+      if (triageLevel === 'EMERGENCY_RED_FLAG') {
+        state.doctor.patients.unshift(tokenObj);
+      } else {
+        state.doctor.patients.push(tokenObj);
+      }
     }
 
     state.doctor.selectedPatientId = tokenObj.id;

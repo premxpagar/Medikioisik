@@ -5,7 +5,8 @@ window.SyncEngine = {
   getStore() {
     const defaultStore = {
       chats: [],
-      prescriptions: []
+      prescriptions: [],
+      patients: window.MOCK_DATA?.patients || []
     };
     const stored = localStorage.getItem('careforge_sync_store');
     return stored ? JSON.parse(stored) : defaultStore;
@@ -53,6 +54,21 @@ window.SyncEngine = {
     return store.prescriptions.filter(p => p.patientId === patientId);
   },
 
+  addPatient(patient) {
+    const store = this.getStore();
+    // Add to the beginning of the list
+    store.patients.unshift(patient);
+    this.saveStore(store);
+    // Update the global mock data pointer
+    if (window.MOCK_DATA) {
+      window.MOCK_DATA.patients = store.patients;
+    }
+  },
+
+  getPatients() {
+    return this.getStore().patients;
+  },
+
   init() {
     // Listen for storage events from OTHER tabs
     window.addEventListener('storage', (e) => {
@@ -68,6 +84,11 @@ window.SyncEngine = {
         // The individual components will listen to this event.
       }
     });
+
+    // On init, set the global MOCK_DATA to the synced patients
+    if (window.MOCK_DATA) {
+      window.MOCK_DATA.patients = this.getPatients();
+    }
   }
 };
 
