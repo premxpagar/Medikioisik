@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MediKiosik — Smart Pre-Consultation System</title>
+  <title>MediKiosik — AI-Assisted Pre-Consultation System</title>
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -30,11 +30,7 @@
   <link rel="stylesheet" href="styles.css">
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body class="bg-slate-50 text-slate-800 antialiased min-h-screen">
-
-  <div id="app-root"></div>
-
-  <div id="legacy-patient-app" style="display: none;" class="flex flex-col min-h-screen justify-between w-full h-full relative">
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col justify-between">
 
   <!-- ==========================================
        TOP UTILITY BAR
@@ -42,6 +38,12 @@
   <div class="bg-[#0F2942] text-white text-xs border-b border-slate-700/50">
     <div class="max-w-7xl mx-auto px-4 py-2 flex flex-wrap items-center justify-between gap-3">
       <div class="flex items-center gap-4">
+        <div class="flex items-center gap-1.5 font-bold text-emerald-400">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+          <i data-lucide="activity" class="w-3.5 h-3.5"></i>
+          <span>MediKiosik AI OPD System Active</span>
+        </div>
+        <span class="hidden sm:inline text-slate-600">|</span>
         <span class="hidden sm:inline text-slate-300 text-[11px]">
           Voice & Touch Pre-Consultation Intake
         </span>
@@ -74,25 +76,17 @@
           <div>
             <div class="flex items-center gap-1.5">
               <span class="text-2xl font-black tracking-tight text-[#0F2942]">Medi<span class="text-[#0CA854]">Kiosik</span></span>
-              <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-[#0CA854] uppercase tracking-wider">OPD</span>
+              <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-[#0CA854] uppercase tracking-wider">AI OPD</span>
             </div>
             <p class="text-[10px] text-slate-500 font-semibold tracking-wider">SMART PRE-CONSULTATION SYSTEM</p>
           </div>
         </div>
       </div>
 
-      <!-- Navigation & Logout -->
-      <div class="flex items-center gap-4">
-        <nav id="header-nav-tabs" class="flex flex-wrap items-center gap-1.5">
-          <!-- Rendered dynamically by app.js -->
-        </nav>
-        <div class="border-l border-slate-200 pl-4">
-          <button onclick="LogoutUser()" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 hover:bg-red-50 text-slate-700 hover:text-red-600 text-xs font-bold transition-colors">
-            <i data-lucide="log-out" class="w-4 h-4"></i>
-            <span>Logout</span>
-          </button>
-        </div>
-      </div>
+      <!-- Navigation Tabs -->
+      <nav id="header-nav-tabs" class="flex flex-wrap items-center gap-1.5">
+        <!-- Rendered dynamically by app.js -->
+      </nav>
     </div>
   </header>
 
@@ -157,7 +151,7 @@
           </div>
           <div>
             <div class="font-black text-lg text-white">Medi<span class="text-[#0CA854]">Kiosik</span></div>
-            <div class="text-[10px] text-slate-400">Smart Pre-Consultation System</div>
+            <div class="text-[10px] text-slate-400">AI-Assisted Pre-Consultation System</div>
           </div>
         </div>
 
@@ -184,71 +178,8 @@
     </div>
   </footer>
 
-  <!-- Floating Patient Chat & Prescriptions Modal -->
-  <div id="patient-portal-overlay" class="fixed bottom-6 right-6 z-50 hidden flex-col items-end gap-4">
-    
-    <!-- Modal Container -->
-    <div id="patient-sync-panel" class="hidden bg-white rounded-2xl shadow-2xl border border-slate-200 w-[350px] overflow-hidden flex-col">
-      <!-- Tabs -->
-      <div class="flex border-b border-slate-200 bg-slate-50">
-        <button id="tab-chat" class="flex-1 py-3 text-sm font-bold text-[#0CA854] border-b-2 border-[#0CA854]">Chat with Doctor</button>
-        <button id="tab-rx" class="flex-1 py-3 text-sm font-bold text-slate-500 hover:text-slate-700">My Prescriptions</button>
-      </div>
-      
-      <!-- Content -->
-      <div class="relative h-[400px] flex flex-col">
-        <!-- Chat Panel -->
-        <div id="panel-chat" class="flex flex-col h-full w-full">
-          <!-- Populated by SharedChat.js -->
-        </div>
-        
-        <!-- RX Panel -->
-        <div id="panel-rx" class="hidden flex-col h-full w-full p-4 overflow-y-auto bg-slate-50 space-y-4">
-          <!-- Populated dynamically -->
-        </div>
-      </div>
-    </div>
-
-    <!-- Floating Toggle Button -->
-    <button id="btn-patient-sync" class="w-14 h-14 bg-[#0F2942] hover:bg-slate-800 text-white rounded-full shadow-xl shadow-slate-900/30 flex items-center justify-center transition-transform hover:scale-110">
-      <i data-lucide="message-square" class="w-6 h-6"></i>
-      <span class="absolute top-0 right-0 w-3.5 h-3.5 bg-red-500 border-2 border-white rounded-full"></span>
-    </button>
-  </div>
-  
-  </div>
-
-  <!-- Shared Role Components -->
-  <script src="components/Navbar.js"></script>
-  <script src="components/SharedChat.js"></script>
-
-  <!-- Login UI -->
-  <script src="components/Login.js"></script>
-
-  <!-- Doctor UI Components -->
-  <script src="components/doctor/DoctorHome.js"></script>
-  <script src="components/doctor/DoctorPatientCase.js"></script>
-  <script src="components/doctor/DoctorAlerts.js"></script>
-
-  <!-- Organization UI Components -->
-  <script src="components/organization/OrgHome.js"></script>
-  <script src="components/organization/OrgDoctors.js"></script>
-  <script src="components/organization/OrgPatients.js"></script>
-  <script src="components/organization/OrgAppointments.js"></script>
-  <script src="components/organization/OrgAlerts.js"></script>
-
   <!-- Scripts -->
-  <script src="data/auth.js"></script>
-  <script src="data/doctors.js"></script>
-  <script src="data/patients.js"></script>
-  <script src="data/appointments.js"></script>
-  <script src="data/alerts.js"></script>
-  <script src="data/organization.js"></script>
-  
   <script src="data.js"></script>
-  <script src="sync.js"></script>
   <script src="app.js"></script>
-
-  <script src="router.js"></script>
 </body>
 </html>

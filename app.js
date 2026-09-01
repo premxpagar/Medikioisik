@@ -319,9 +319,7 @@
   function renderHeader() {
     const tabs = [
       { id: 'portal', label: 'OPD Portal', icon: 'hospital', badge: '' },
-      { id: 'kiosk', label: 'Patient Kiosk (Check-in)', icon: 'tablet', badge: 'Touch & Voice' },
-      { id: 'doctor', label: 'Doctor Workstation', icon: 'stethoscope', badge: state.doctor.patients.filter(p => p.triageLevel === 'EMERGENCY_RED_FLAG').length ? '🚨 Alert' : '' },
-      { id: 'docViewer', label: 'Scan Reports (OCR)', icon: 'file-text', badge: '' }
+      { id: 'kiosk', label: 'Patient Kiosk (Check-in)', icon: 'tablet', badge: 'Touch & Voice' }
     ];
 
     const navHtml = tabs.map(t => {
@@ -334,14 +332,17 @@
         }">
           <i data-lucide="${t.icon}" class="w-4 h-4"></i>
           <span>${t.label}</span>
-          ${t.badge ? `<span class="text-[10px] px-1.5 py-0.5 rounded-full font-bold ${isActive ? 'bg-white text-[#0CA854]' : 'bg-red-100 text-red-600'}">${t.badge}</span>` : ''}
+          ${t.badge ? `<span class="text-[10px] px-1.5 py-0.5 rounded-full font-bold ${isActive ? 'bg-white text-[#0CA854]' : 'bg-slate-200 text-slate-600'}">${t.badge}</span>` : ''}
         </button>
       `;
     }).join('');
 
-    $('#header-nav-tabs').innerHTML = navHtml;
+    const headerNavTabs = document.getElementById('header-nav-tabs');
+    if (headerNavTabs) {
+      headerNavTabs.innerHTML = navHtml;
+    }
 
-    $$('.nav-tab-btn').forEach(btn => {
+    document.querySelectorAll('.nav-tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         state.currentTab = btn.getAttribute('data-tab');
         renderApp();
@@ -392,54 +393,58 @@
     return `
       <div class="space-y-12 pb-16">
         <!-- Hero Section -->
-        <section class="relative rounded-3xl overflow-hidden shadow-2xl bg-gradient-to-r from-[#0F2942] via-[#0F395A] to-[#0A5A35] text-white p-8 md:p-12 space-y-6">
-          <div class="absolute -right-20 -bottom-20 w-96 h-96 bg-[#0CA854]/20 rounded-full blur-3xl pointer-events-none"></div>
+        <section class="relative rounded-3xl overflow-hidden shadow-sm bg-white/70 backdrop-blur-3xl border border-white p-8 md:p-12">
+          <div class="absolute -right-20 -bottom-20 w-96 h-96 bg-slate-200/50 rounded-full blur-3xl pointer-events-none"></div>
 
-          <div class="relative z-10 max-w-3xl space-y-4">
-            <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-bold text-emerald-300">
-              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-              Smart Pre-Consultation System for High-Volume OPDs
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-10 items-center relative z-10">
+            <!-- Text Content -->
+            <div class="space-y-6">
+              <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/60 backdrop-blur-md border border-slate-200 text-xs font-bold text-slate-700">
+                <span class="w-2 h-2 rounded-full bg-[#0CA854] animate-ping"></span>
+                Smart Pre-Consultation System for High-Volume OPDs
+              </div>
+
+              <h1 class="text-3xl md:text-5xl font-black tracking-tight leading-tight text-slate-900">
+                Fast-Track Your Hospital Visit with <br/>
+                <span class="text-[#0CA854]">MediKiosik Smart Check-in</span>
+              </h1>
+
+              <p class="text-slate-600 text-sm md:text-base leading-relaxed">
+                No more waiting in long queues to explain your medical history. Speak or tap in <strong>Hindi or English</strong>, provide your old prescriptions, and get a structured doctor summary in seconds.
+              </p>
+
+              <div class="flex flex-wrap items-center gap-4 pt-2">
+                <button id="hero-start-checkin-btn" class="flex items-center gap-3 px-7 py-4 rounded-xl bg-[#0CA854] hover:bg-[#087F3F] text-white font-extrabold text-sm md:text-base shadow-lg shadow-emerald-700/20 transition-all hover:scale-105 active:scale-95">
+                  <i data-lucide="tablet" class="w-5 h-5"></i>
+                  <span>Start Patient Pre-Checkin (Touch & Voice)</span>
+                </button>
+              </div>
+
+              <!-- Impact Metrics -->
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6 border-t border-slate-200">
+                <div>
+                  <div class="text-2xl md:text-3xl font-black text-slate-900">60 Sec</div>
+                  <div class="text-xs text-slate-500">Doctor Briefing Time</div>
+                </div>
+                <div>
+                  <div class="text-2xl md:text-3xl font-black text-[#0CA854]">Hindi + English</div>
+                  <div class="text-xs text-slate-500">Voice & Touch Guided</div>
+                </div>
+                <div>
+                  <div class="text-2xl md:text-3xl font-black text-slate-900">Secure Sync</div>
+                  <div class="text-xs text-slate-500">Instant Records</div>
+                </div>
+                <div>
+                  <div class="text-2xl md:text-3xl font-black text-slate-700">Easy Access</div>
+                  <div class="text-xs text-slate-500">Walk-in Friendly</div>
+                </div>
+              </div>
             </div>
 
-            <h1 class="text-3xl md:text-5xl font-black tracking-tight leading-tight">
-              Fast-Track Your Hospital Visit with <br/>
-              <span class="text-emerald-400">MediKiosik Smart Check-in</span>
-            </h1>
-
-            <p class="text-slate-200 text-sm md:text-base max-w-2xl leading-relaxed">
-              No more waiting in long queues to explain your medical history. Speak or tap in <strong>Hindi or English</strong>, scan your old prescriptions, and get a structured doctor summary in seconds.
-            </p>
-
-            <div class="flex flex-wrap items-center gap-4 pt-2">
-              <button id="hero-start-checkin-btn" class="flex items-center gap-3 px-7 py-4 rounded-xl bg-[#0CA854] hover:bg-[#087F3F] text-white font-extrabold text-sm md:text-base shadow-xl shadow-emerald-700/40 transition-all hover:scale-105 active:scale-95">
-                <i data-lucide="tablet" class="w-5 h-5"></i>
-                <span>Start Patient Pre-Checkin (Touch & Voice)</span>
-              </button>
-
-              <button id="hero-open-doc-btn" class="flex items-center gap-2.5 px-6 py-4 rounded-xl bg-white/10 hover:bg-white/20 border border-white/30 text-white font-bold text-sm backdrop-blur-md transition-all">
-                <i data-lucide="stethoscope" class="w-5 h-5 text-emerald-300"></i>
-                <span>Doctor Workstation</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Impact Metrics -->
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6 border-t border-white/15">
-            <div>
-              <div class="text-2xl md:text-3xl font-black text-white">60 Sec</div>
-              <div class="text-xs text-slate-300">Doctor Briefing Time</div>
-            </div>
-            <div>
-              <div class="text-2xl md:text-3xl font-black text-emerald-400">Hindi + English</div>
-              <div class="text-xs text-slate-300">Voice & Touch Guided</div>
-            </div>
-            <div>
-              <div class="text-2xl md:text-3xl font-black text-white">100% Automatic</div>
-              <div class="text-xs text-slate-300">Prescription OCR Scanner</div>
-            </div>
-            <div>
-              <div class="text-2xl md:text-3xl font-black text-cyan-300">Zero App Needed</div>
-              <div class="text-xs text-slate-300">Walk-in Kiosk Friendly</div>
+            <!-- Hero Image (Liquid Glass Style) -->
+            <div class="hidden md:block relative group">
+              <div class="absolute -inset-2 bg-slate-200/50 rounded-3xl blur-2xl group-hover:bg-slate-300/50 transition-all"></div>
+              <img src="/neutral_glass_doctor_1788294019521.jpg" alt="Doctor and Patient Consultation" class="relative z-10 w-full h-[400px] object-cover rounded-3xl shadow-lg border border-white/50 group-hover:scale-[1.02] transition-transform duration-500" />
             </div>
           </div>
         </section>
@@ -1102,6 +1107,7 @@
             </div>
 
             <div class="flex items-center gap-3">
+              <input type="file" id="hidden-file-input" class="hidden" accept="image/*,.pdf" />
               <button id="btn-trigger-upload" class="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold flex items-center gap-2">
                 <i data-lucide="upload" class="w-4 h-4"></i>
                 <span>Upload From Device</span>
@@ -1151,7 +1157,14 @@
       `;
 
       $('#btn-trigger-upload')?.addEventListener('click', () => {
-        processOCRDocument('prescription');
+        const fileInput = document.getElementById('hidden-file-input');
+        if (fileInput) fileInput.click();
+      });
+
+      $('#hidden-file-input')?.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+          processOCRDocument('prescription'); // Default simulation
+        }
       });
 
       $$('.btn-sample-ocr').forEach(b => {
@@ -1222,11 +1235,6 @@
               <span>Print Token Slip</span>
             </button>
 
-            <button id="btn-go-to-doc-station" class="kiosk-btn px-6 py-3 rounded-xl bg-[#0CA854] hover:bg-[#087F3F] text-white text-xs font-bold flex items-center gap-2">
-              <i data-lucide="stethoscope" class="w-4 h-4"></i>
-              <span>Open in Doctor Workstation →</span>
-            </button>
-
             <button id="btn-reset-kiosk" class="kiosk-btn px-4 py-3 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold">
               New Patient
             </button>
@@ -1234,16 +1242,23 @@
         </div>
       `;
 
+      // Show Chat Overlay when OPD is booked
+      const overlay = document.getElementById('patient-portal-overlay');
+      if (overlay) {
+        overlay.classList.remove('hidden');
+        overlay.classList.add('flex');
+      }
+
       $('#btn-print-token')?.addEventListener('click', () => {
         window.print();
       });
 
-      $('#btn-go-to-doc-station')?.addEventListener('click', () => {
-        state.currentTab = 'doctor';
-        renderApp();
-      });
-
       $('#btn-reset-kiosk')?.addEventListener('click', () => {
+        if (overlay) {
+          overlay.classList.add('hidden');
+          overlay.classList.remove('flex');
+        }
+
         state.kiosk.step = 1;
         state.kiosk.isRedFlagTriggered = false;
         state.kiosk.patient = {
