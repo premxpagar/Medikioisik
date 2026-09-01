@@ -425,16 +425,63 @@
     const selectedDept = depts.find(d => d.id === state.portal.selectedDeptId) || depts[0];
     const doctors = window.MEDIKIOSIK_DATA.doctors;
 
-    const filteredDoctors = doctors.filter(doc => {
-      if (state.portal.doctorSearchText) {
-        const q = state.portal.doctorSearchText.toLowerCase();
-        return doc.name.toLowerCase().includes(q) || doc.dept.toLowerCase().includes(q) || doc.specialty.toLowerCase().includes(q);
-      }
-      return true;
-    });
+    // Check for active physical verification notice
+    const activePhysicalNotice = window.SyncEngine ? window.SyncEngine.getGlobalPhysicalNotice() : null;
+    const allPats = window.SyncEngine ? window.SyncEngine.getPatients() : [];
+    const patientWithVerification = allPats.find(p => p.physicalVerification?.requested || p.status === 'Physical Verification Required');
+    const noticeToDisplay = activePhysicalNotice || (patientWithVerification ? {
+      patientName: patientWithVerification.name,
+      doctor: patientWithVerification.doctor || patientWithVerification.doctorName || 'Assigned Doctor',
+      hospital: patientWithVerification.physicalVerification?.hospital || 'MHSSCE Healthcare Center & Hospital, Byculla, Mumbai',
+      instructions: patientWithVerification.physicalVerification?.instructions || 'Please report to Room 04 for physical examination.',
+      time: patientWithVerification.physicalVerification?.time || patientWithVerification.checkInTime || 'Today'
+    } : null);
 
     return `
       <div class="space-y-12 pb-16">
+        
+        <!-- Live Physical Verification Notice Banner (Dispatched by Doctor) -->
+        ${noticeToDisplay ? `
+          <section id="banner-physical-verification" class="p-6 md:p-8 rounded-3xl bg-gradient-to-br from-amber-500/15 via-orange-500/10 to-amber-50 border-2 border-amber-400 shadow-xl shadow-amber-500/10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
+            <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-amber-400/20 rounded-full blur-2xl pointer-events-none"></div>
+            
+            <div class="flex items-start gap-5 relative z-10">
+              <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-600 to-amber-500 text-white flex items-center justify-center shadow-lg shadow-amber-500/30 flex-shrink-0">
+                <i data-lucide="building-2" class="w-7 h-7"></i>
+              </div>
+              <div class="space-y-1.5">
+                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500 text-white font-black text-xs uppercase tracking-wider">
+                  <span class="w-2 h-2 rounded-full bg-white animate-ping"></span>
+                  Doctor Notice: In-Person Physical Verification Required
+                </div>
+                <h2 class="text-xl md:text-2xl font-black text-slate-900">
+                  Please come to MHSSCE Hospital (OPD Room 04)
+                </h2>
+                <p class="text-xs md:text-sm text-slate-700 max-w-2xl leading-relaxed">
+                  Doctor <strong>${noticeToDisplay.doctor}</strong> has reviewed your check-in summary and ordered a physical verification visit at <strong>${noticeToDisplay.hospital}</strong>.
+                </p>
+                <div class="flex flex-wrap items-center gap-3 pt-1 text-xs text-slate-600 font-semibold">
+                  <span class="flex items-center gap-1"><i data-lucide="map-pin" class="w-3.5 h-3.5 text-amber-700"></i> MHSSCE Campus, 8 Shepherd Rd, Byculla</span>
+                  <span>•</span>
+                  <span class="flex items-center gap-1"><i data-lucide="clock" class="w-3.5 h-3.5 text-amber-700"></i> Called: ${noticeToDisplay.time}</span>
+                  <span>•</span>
+                  <span>Patient: <strong>${noticeToDisplay.patientName}</strong></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap sm:flex-nowrap items-center gap-3 w-full md:w-auto relative z-10 flex-shrink-0">
+              <a href="https://maps.google.com/?q=MH+Saboo+Siddik+College+of+Engineering+Byculla+Mumbai" target="_blank" class="flex-1 sm:flex-initial px-5 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md hover:scale-105 transition-all">
+                <i data-lucide="navigation" class="w-4 h-4 text-emerald-400"></i>
+                <span>Get Directions to MHSSCE</span>
+              </a>
+              <button id="btn-dismiss-physical-notice" class="px-4 py-3 rounded-xl border border-amber-300 bg-white/80 hover:bg-white text-slate-700 font-bold text-xs transition-colors">
+                Dismiss
+              </button>
+            </div>
+          </section>
+        ` : ''}
+
         <!-- Hero Section -->
         <section class="relative rounded-3xl overflow-hidden shadow-sm bg-white/70 backdrop-blur-3xl border border-white p-8 md:p-12">
           <div class="absolute -right-20 -bottom-20 w-96 h-96 bg-slate-200/50 rounded-full blur-3xl pointer-events-none"></div>
@@ -536,87 +583,72 @@
           </div>
         </section>
 
-        <!-- OPD Departments & Available Clinicians -->
+        <!-- Nearest Hospitals & Location Factor Directory (For Patients & Doctors) -->
         <section class="space-y-6">
           <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div>
-              <span class="text-xs font-bold text-[#0CA854] tracking-widest uppercase">Hospital Services</span>
-              <h2 class="text-2xl md:text-3xl font-extrabold text-slate-900">OPD Clinical Departments</h2>
+              <span class="text-xs font-bold text-[#0CA854] tracking-widest uppercase">Emergency & Network Locator</span>
+              <h2 class="text-2xl md:text-3xl font-extrabold text-slate-900">Nearest Hospitals & Location Factors</h2>
+              <p class="text-xs text-slate-500 mt-1">Real-time geospatial distance, 24x7 ER status, and direct hospital routing around MHSSCE Campus, Byculla.</p>
             </div>
-            <p class="text-xs text-slate-500 max-w-md">Select your department below to start pre-consultation check-in.</p>
+            <div class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-800 self-start md:self-auto">
+              <i data-lucide="map-pin" class="w-4 h-4 text-[#0CA854]"></i>
+              <span>Location Anchor: Byculla Hub</span>
+            </div>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            ${depts.map(d => `
-              <div class="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm hover:shadow-lg transition-all space-y-4 flex flex-col justify-between">
+            ${(window.MEDIKIOSIK_DATA?.nearestHospitals || []).map(h => `
+              <div class="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-4 group">
                 <div class="space-y-3">
-                  <div class="flex items-center justify-between">
-                    <div class="w-10 h-10 rounded-xl ${d.color} flex items-center justify-center font-bold">
-                      <i data-lucide="${d.icon}" class="w-5 h-5"></i>
+                  <div class="flex items-start justify-between gap-2">
+                    <div>
+                      <span class="inline-flex px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${h.badgeColor} border mb-1">
+                        ${h.badge}
+                      </span>
+                      <h3 class="text-lg font-bold text-slate-900 group-hover:text-[#0CA854] transition-colors">${h.name}</h3>
                     </div>
-                    <span class="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">${d.room}</span>
-                  </div>
-
-                  <div>
-                    <h3 class="text-lg font-bold text-slate-900">${d.name}</h3>
-                    <p class="text-xs font-semibold text-[#0CA854]">${d.hindiName}</p>
-                    <p class="text-xs text-slate-600 mt-1 leading-relaxed">${d.shortDesc}</p>
-                  </div>
-
-                  <div class="text-[11px] text-slate-500 pt-1 border-t border-slate-100 flex items-center justify-between font-medium">
-                    <span>Doctors: <strong>${d.keyDoctors.split(',')[0]}</strong></span>
-                    <span class="text-emerald-700 font-bold">${d.avgWaitTime}</span>
-                  </div>
-                </div>
-
-                <button data-dept-name="${d.name}" class="btn-checkin-dept w-full py-2.5 rounded-xl bg-slate-900 hover:bg-[#0CA854] text-white text-xs font-bold transition-colors flex items-center justify-center gap-2">
-                  <span>Check-in to ${d.name.split(' ')[0]}</span>
-                  <i data-lucide="arrow-right" class="w-4 h-4"></i>
-                </button>
-              </div>
-            `).join('')}
-          </div>
-        </section>
-
-        <!-- Doctors on Duty -->
-        <section class="space-y-6">
-          <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
-            <div>
-              <span class="text-xs font-bold text-[#0CA854] tracking-widest uppercase">OPD Schedule</span>
-              <h2 class="text-2xl md:text-3xl font-extrabold text-slate-900">Doctors Available Today</h2>
-            </div>
-            <div class="w-full md:w-72">
-              <input id="portal-doc-search" type="text" placeholder="Search doctor by name or department..." class="w-full px-4 py-2 rounded-xl border border-slate-300 text-xs text-slate-800 outline-none focus:border-[#0CA854]" />
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            ${filteredDoctors.map(d => `
-              <div class="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm hover:shadow-lg transition-all flex flex-col justify-between space-y-4">
-                <div class="space-y-3">
-                  <div class="relative h-48 w-full rounded-xl overflow-hidden bg-slate-100">
-                    <img src="${d.image}" alt="${d.name}" class="w-full h-full object-cover object-top" />
-                    <div class="absolute bottom-2 left-2 bg-slate-900/80 backdrop-blur-sm text-white text-[11px] px-2 py-0.5 rounded font-bold">
-                      ★ ${d.rating}
+                    <div class="text-right flex-shrink-0">
+                      <span class="text-base font-black text-slate-900">${h.distanceKm} km</span>
+                      <div class="text-[10px] text-slate-500 font-semibold">${h.travelTimeMins} mins away</div>
                     </div>
                   </div>
 
-                  <div>
-                    <h4 class="font-bold text-slate-900 text-base">${d.name}</h4>
-                    <p class="text-xs font-semibold text-[#0CA854]">${d.specialty}</p>
-                    <p class="text-[11px] text-slate-500">${d.degrees}</p>
+                  <p class="text-xs text-slate-600 leading-relaxed">${h.address}</p>
+
+                  <div class="space-y-1.5 pt-2 border-t border-slate-100 text-xs">
+                    <div class="flex items-center justify-between text-slate-600">
+                      <span class="font-medium">Emergency Status:</span>
+                      <span class="font-bold ${h.emergency24x7 ? 'text-emerald-700' : 'text-slate-700'} flex items-center gap-1">
+                        ${h.emergency24x7 ? '<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> 24x7 Active ER' : 'Day OPD'}
+                      </span>
+                    </div>
+                    <div class="flex items-center justify-between text-slate-600">
+                      <span class="font-medium">ICU Beds Available:</span>
+                      <span class="font-bold text-slate-900">${h.icuBedsAvailable} Beds</span>
+                    </div>
+                    <div class="flex items-center justify-between text-slate-600">
+                      <span class="font-medium">Contact Phone:</span>
+                      <a href="tel:${h.phone}" class="font-bold text-slate-800 hover:text-[#0CA854]">${h.phone}</a>
+                    </div>
                   </div>
 
-                  <div class="text-xs text-slate-600 space-y-1 pt-1 border-t border-slate-100">
-                    <div class="flex items-center gap-1.5"><i data-lucide="clock" class="w-3.5 h-3.5 text-slate-400"></i> ${d.opdTiming}</div>
-                    <div class="flex items-center gap-1.5"><i data-lucide="map-pin" class="w-3.5 h-3.5 text-slate-400"></i> ${d.room}</div>
+                  <div class="pt-2 flex flex-wrap gap-1.5">
+                    ${h.specialties.map(s => `
+                      <span class="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-medium">${s}</span>
+                    `).join('')}
                   </div>
                 </div>
 
-                <button data-doc-id="${d.id}" class="btn-checkin-with-doctor w-full py-2.5 rounded-xl bg-[#0CA854] hover:bg-[#087F3F] text-white text-xs font-bold transition-colors flex items-center justify-center gap-2">
-                  <i data-lucide="tablet" class="w-4 h-4"></i>
-                  <span>Pre-Checkin with Doctor</span>
-                </button>
+                <div class="pt-3 border-t border-slate-100 flex items-center gap-3">
+                  <a href="${h.mapQuery}" target="_blank" class="flex-1 py-2.5 rounded-xl bg-slate-900 hover:bg-[#0CA854] text-white text-xs font-bold transition-all flex items-center justify-center gap-2">
+                    <i data-lucide="navigation" class="w-3.5 h-3.5"></i>
+                    <span>Get Directions</span>
+                  </a>
+                  <a href="tel:${h.phone}" class="px-3.5 py-2.5 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold transition-all flex items-center justify-center">
+                    <i data-lucide="phone" class="w-3.5 h-3.5"></i>
+                  </a>
+                </div>
               </div>
             `).join('')}
           </div>
@@ -624,7 +656,6 @@
 
         <!-- Past Visits History Section -->
         ${(() => {
-          const allPats = window.SyncEngine ? window.SyncEngine.getPatients() : [];
           const visits = allPats.filter(p => p.token);
           if (!visits.length) return '';
 
@@ -642,8 +673,21 @@
                   const chats = window.SyncEngine.getMessages(p.id);
                   const isEmergency = p.triageLevel === 'EMERGENCY_RED_FLAG';
                   const isUrgent = p.triageLevel === 'URGENT';
+                  const hasPhysicalVerify = p.status === 'Physical Verification Required' || p.physicalVerification?.requested;
+                  
                   return `
-                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                    <div class="bg-white rounded-2xl border ${hasPhysicalVerify ? 'border-amber-400 shadow-amber-500/10' : 'border-slate-200'} shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                      
+                      ${hasPhysicalVerify ? `
+                        <div class="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white flex items-center justify-between text-xs font-bold">
+                          <span class="flex items-center gap-1.5">
+                            <i data-lucide="building-2" class="w-4 h-4"></i>
+                            PHYSICAL VERIFICATION ORDERED: MHSSCE HOSPITAL (ROOM 04)
+                          </span>
+                          <span class="text-[10px] bg-white/20 px-2 py-0.5 rounded">Action Required</span>
+                        </div>
+                      ` : ''}
+
                       <!-- Visit Header -->
                       <div class="p-5 flex items-start justify-between gap-3">
                         <div class="flex items-center gap-3">
@@ -745,10 +789,28 @@
       });
     });
 
+    $('#btn-dismiss-physical-notice')?.addEventListener('click', () => {
+      localStorage.removeItem('careforge_physical_notice');
+      const banner = document.getElementById('banner-physical-verification');
+      if (banner) {
+        banner.style.display = 'none';
+      }
+    });
+
     $('#portal-doc-search')?.addEventListener('input', (e) => {
       state.portal.doctorSearchText = e.target.value;
       renderActiveTab();
     });
+
+    // Auto-refresh when doctor triggers physical verification
+    if (!window._careforge_portal_sync_attached) {
+      window._careforge_portal_sync_attached = true;
+      window.addEventListener('careforge_sync_updated', () => {
+        if (state.currentTab === 'portal') {
+          renderActiveTab();
+        }
+      });
+    }
   }
 
   // ==========================================
