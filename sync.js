@@ -9,7 +9,15 @@ window.SyncEngine = {
       patients: window.MOCK_DATA?.patients || []
     };
     const stored = localStorage.getItem('careforge_sync_store');
-    return stored ? JSON.parse(stored) : defaultStore;
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (!parsed.patients) {
+        parsed.patients = window.MOCK_DATA?.patients || [];
+        this.saveStore(parsed); // Save the migration
+      }
+      return parsed;
+    }
+    return defaultStore;
   },
 
   saveStore(data) {
