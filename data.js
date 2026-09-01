@@ -82,7 +82,7 @@ const MEDIKIOSIK_DATA = {
       experience: "16+ Years Experience",
       languages: "English, Hindi, Punjabi",
       rating: "4.9 (2,100+ reviews)",
-      image: "https://images.unsplash.com/photo-1594824813590-78923a1a5b89?w=500&auto=format&fit=crop&q=80",
+      image: "https://images.unsplash.com/photo-1651008376811-b90baee60c1f?w=500&auto=format&fit=crop&q=80",
       opdTiming: "Mon to Sat (08:30 AM - 02:00 PM)",
       room: "OPD Room 04",
       fee: "₹500 (Free in Govt OPD)"
