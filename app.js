@@ -318,6 +318,17 @@
 
     state.doctor.selectedPatientId = tokenObj.id;
     state.kiosk.step = 7;
+
+    // Persist the session so page refresh restores the receipt
+    try {
+      localStorage.setItem('careforge_kiosk_session', JSON.stringify({
+        step: 7,
+        generatedToken: tokenObj,
+        patient: state.kiosk.patient,
+        isRedFlagTriggered: state.kiosk.isRedFlagTriggered
+      }));
+    } catch(e) {}
+
     renderKioskStep();
   }
 
@@ -373,6 +384,24 @@
       attachPortalListeners();
     } else if (state.currentTab === 'kiosk') {
       container.innerHTML = getKioskHTML();
+
+      // Restore a previous kiosk session if it exists
+      const savedSession = localStorage.getItem('careforge_kiosk_session');
+      if (savedSession) {
+        try {
+          const session = JSON.parse(savedSession);
+          if (session.step === 7 && session.generatedToken) {
+            state.kiosk.step = 7;
+            state.kiosk.generatedToken = session.generatedToken;
+            state.kiosk.patient = session.patient || state.kiosk.patient;
+            state.kiosk.isRedFlagTriggered = session.isRedFlagTriggered || false;
+            // Show the chat overlay too
+            const overlay = document.getElementById('patient-portal-overlay');
+            if (overlay) { overlay.classList.remove('hidden'); overlay.classList.add('flex'); }
+          }
+        } catch(e) {}
+      }
+
       renderKioskStep();
       attachKioskListeners();
     } else if (state.currentTab === 'doctor') {
@@ -766,6 +795,34 @@
             <span>${getI18n('btnNext')}</span>
           </button>
         </div>
+
+        <!-- Visit History from this device -->
+        ${(() => {
+          const allPats = window.SyncEngine ? window.SyncEngine.getPatients() : [];
+          // Only show patients who were added via kiosk (have a token number)
+          const history = allPats.filter(p => p.token);
+          if (!history.length) return '';
+          return `
+            <div class="border-t border-slate-100 pt-5 space-y-3">
+              <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                <i data-lucide="history" class="w-3.5 h-3.5"></i> Recent Check-ins on this Device
+              </h4>
+              <div class="space-y-2">
+                ${history.slice(0, 5).map(p => `
+                  <div class="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+                    <div>
+                      <div class="font-bold text-slate-900">${p.name}</div>
+                      <div class="text-[11px] text-slate-500 mt-0.5">${p.token} · ${p.checkInTime || ''} · ${p.doctorName || p.doctor || ''}</div>
+                    </div>
+                    <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${p.triageLevel === 'EMERGENCY_RED_FLAG' ? 'bg-rose-100 text-rose-700' : p.triageLevel === 'URGENT' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}">
+                      ${p.triageLevel === 'EMERGENCY_RED_FLAG' ? 'EMERGENCY' : p.triageLevel || 'ROUTINE'}
+                    </span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        })()}
       `;
 
       $('#btn-quick-fill-demo')?.addEventListener('click', () => {
@@ -1310,6 +1367,9 @@
           overlay.classList.add('hidden');
           overlay.classList.remove('flex');
         }
+
+        // Clear saved session
+        localStorage.removeItem('careforge_kiosk_session');
 
         state.kiosk.step = 1;
         state.kiosk.isRedFlagTriggered = false;
