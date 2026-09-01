@@ -108,9 +108,24 @@ const AppRouter = {
     const tabChat = document.getElementById('tab-chat');
     const tabRx = document.getElementById('tab-rx');
     const tabInsurance = document.getElementById('tab-insurance');
+    const tabHistory = document.getElementById('tab-history');
     const panelChat = document.getElementById('panel-chat');
     const panelRx = document.getElementById('panel-rx');
     const panelInsurance = document.getElementById('panel-insurance');
+    const panelHistory = document.getElementById('panel-history');
+
+    const TAB_ACTIVE = 'flex-1 py-2.5 text-[10px] font-bold text-[#0CA854] border-b-2 border-[#0CA854]';
+    const TAB_INACTIVE = 'flex-1 py-2.5 text-[10px] font-bold text-slate-500 hover:text-slate-700';
+
+    function showPanel(active) {
+      [panelChat, panelRx, panelInsurance, panelHistory].forEach(p => { p.classList.add('hidden'); p.classList.remove('flex'); });
+      active.classList.remove('hidden');
+      active.classList.add('flex');
+    }
+    function setActiveTab(active) {
+      [tabChat, tabRx, tabInsurance, tabHistory].forEach(t => { if(t) t.className = TAB_INACTIVE; });
+      if(active) active.className = TAB_ACTIVE;
+    }
 
     // The overlay button is hidden by default.
     // It will be shown by app.js when the patient completes OPD booking (step 6).
@@ -128,44 +143,12 @@ const AppRouter = {
     };
 
     // Tab switching
-    tabChat.onclick = () => {
-      tabChat.className = "flex-1 py-3 text-xs font-bold text-[#0CA854] border-b-2 border-[#0CA854]";
-      tabRx.className = "flex-1 py-3 text-xs font-bold text-slate-500 hover:text-slate-700";
-      tabInsurance.className = "flex-1 py-3 text-xs font-bold text-slate-500 hover:text-slate-700";
-      
-      panelChat.classList.remove('hidden');
-      panelChat.classList.add('flex');
-      panelRx.classList.add('hidden');
-      panelRx.classList.remove('flex');
-      panelInsurance.classList.add('hidden');
-      panelInsurance.classList.remove('flex');
-    };
-
-    tabRx.onclick = () => {
-      tabRx.className = "flex-1 py-3 text-xs font-bold text-[#0CA854] border-b-2 border-[#0CA854]";
-      tabChat.className = "flex-1 py-3 text-xs font-bold text-slate-500 hover:text-slate-700";
-      tabInsurance.className = "flex-1 py-3 text-xs font-bold text-slate-500 hover:text-slate-700";
-      
-      panelRx.classList.remove('hidden');
-      panelRx.classList.add('flex');
-      panelChat.classList.add('hidden');
-      panelChat.classList.remove('flex');
-      panelInsurance.classList.add('hidden');
-      panelInsurance.classList.remove('flex');
-    };
-
-    tabInsurance.onclick = () => {
-      tabInsurance.className = "flex-1 py-3 text-xs font-bold text-[#0CA854] border-b-2 border-[#0CA854]";
-      tabChat.className = "flex-1 py-3 text-xs font-bold text-slate-500 hover:text-slate-700";
-      tabRx.className = "flex-1 py-3 text-xs font-bold text-slate-500 hover:text-slate-700";
-      
-      panelInsurance.classList.remove('hidden');
-      panelInsurance.classList.add('flex');
-      panelChat.classList.add('hidden');
-      panelChat.classList.remove('flex');
-      panelRx.classList.add('hidden');
-      panelRx.classList.remove('flex');
-    };
+    tabChat.onclick = () => { setActiveTab(tabChat); showPanel(panelChat); this.renderPatientSync(user.id); };
+    tabRx.onclick = () => { setActiveTab(tabRx); showPanel(panelRx); this.renderPatientSync(user.id); };
+    tabInsurance.onclick = () => { setActiveTab(tabInsurance); showPanel(panelInsurance); this.renderPatientSync(user.id); };
+    if (tabHistory) {
+      tabHistory.onclick = () => { setActiveTab(tabHistory); showPanel(panelHistory); this.renderConsultationHistory(); };
+    }
 
     // Global listener for cross-tab sync updates
     window.addEventListener('careforge_sync_updated', () => {
@@ -245,6 +228,98 @@ const AppRouter = {
     } else {
       panelInsurance.innerHTML = `<div class="text-center text-xs text-slate-500 mt-4">No billing information found.</div>`;
     }
+
+    if (window.lucide) window.lucide.createIcons();
+  },
+
+  renderConsultationHistory() {
+    const panel = document.getElementById('panel-history');
+    if (!panel) return;
+
+    // Get all patients who were checked in on this device (have token)
+    const allPats = window.SyncEngine ? window.SyncEngine.getPatients() : [];
+    const visits = allPats.filter(p => p.token);
+
+    if (!visits.length) {
+      panel.innerHTML = `
+        <div class="flex flex-col items-center justify-center h-full p-6 text-center gap-3">
+          <i data-lucide="folder-open" class="w-10 h-10 text-slate-300"></i>
+          <p class="text-sm font-bold text-slate-500">No past consultations found</p>
+          <p class="text-xs text-slate-400">Complete a check-in to see your history here.</p>
+        </div>`;
+      if (window.lucide) window.lucide.createIcons();
+      return;
+    }
+
+    panel.innerHTML = `
+      <div class="p-4 space-y-4">
+        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+          ${visits.length} Visit(s) on this device
+        </p>
+        ${visits.map((p, i) => {
+          const rxs = window.SyncEngine.getPrescriptions(p.id);
+          const chats = window.SyncEngine.getMessages(p.id);
+          const isEmergency = p.triageLevel === 'EMERGENCY_RED_FLAG';
+          const isUrgent = p.triageLevel === 'URGENT';
+          return `
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+              <!-- Visit Header -->
+              <div class="p-4 flex items-start justify-between gap-2">
+                <div>
+                  <div class="font-black text-slate-900 text-sm">${p.name}</div>
+                  <div class="text-[10px] text-slate-500 mt-0.5">${p.checkInTime || ''} · ${p.doctorName || p.doctor || 'Doctor'}</div>
+                  <div class="font-bold text-[11px] text-slate-700 mt-1">${p.chiefComplaint || 'OPD Visit'}</div>
+                </div>
+                <div class="text-right flex-shrink-0">
+                  <div class="text-xs font-black text-slate-800">${p.token}</div>
+                  <span class="inline-flex px-1.5 py-0.5 rounded text-[9px] font-bold uppercase mt-1 ${isEmergency ? 'bg-rose-100 text-rose-700' : isUrgent ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}">
+                    ${isEmergency ? 'EMERGENCY' : isUrgent ? 'URGENT' : 'ROUTINE'}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Prescriptions -->
+              ${rxs.length > 0 ? `
+                <div class="border-t border-slate-100 px-4 py-3 space-y-2 bg-purple-50/40">
+                  <div class="text-[10px] font-bold text-purple-700 uppercase flex items-center gap-1">
+                    <i data-lucide="pill" class="w-3 h-3"></i> Medicines Prescribed
+                  </div>
+                  ${rxs.map(rx => `
+                    <div class="bg-white border border-purple-100 rounded-lg p-2.5">
+                      <div class="font-bold text-[11px] text-slate-900">${rx.medication}</div>
+                      <div class="text-[10px] text-slate-600 mt-0.5">${rx.notes}</div>
+                      <div class="text-[9px] text-slate-400 mt-1 italic">Dr. ${rx.doctorName} · ${rx.date}</div>
+                    </div>
+                  `).join('')}
+                </div>
+              ` : ''}
+
+              <!-- Chat History -->
+              ${chats.length > 0 ? `
+                <div class="border-t border-slate-100 px-4 py-3 space-y-2 bg-slate-50/60">
+                  <div class="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1">
+                    <i data-lucide="message-circle" class="w-3 h-3"></i> Consultation Chat (${chats.length} messages)
+                  </div>
+                  <div class="space-y-1.5 max-h-[120px] overflow-y-auto">
+                    ${chats.map(m => `
+                      <div class="flex ${m.sender === 'PATIENT' ? 'justify-end' : 'justify-start'}">
+                        <div class="px-2.5 py-1.5 rounded-lg text-[10px] max-w-[75%] ${m.sender === 'PATIENT' ? 'bg-[#0CA854] text-white' : 'bg-white border border-slate-200 text-slate-800'}">
+                          ${m.text}
+                        </div>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+              ` : ''}
+
+              ${rxs.length === 0 && chats.length === 0 ? `
+                <div class="border-t border-slate-100 px-4 py-3 text-[11px] text-slate-400 italic">No prescriptions or chats recorded for this visit.</div>
+              ` : ''}
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
 
     if (window.lucide) window.lucide.createIcons();
   }

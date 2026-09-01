@@ -188,12 +188,13 @@
   <div id="patient-portal-overlay" class="fixed bottom-6 right-6 z-50 hidden flex-col items-end gap-4">
     
     <!-- Modal Container -->
-    <div id="patient-sync-panel" class="hidden bg-white rounded-2xl shadow-2xl border border-slate-200 w-[400px] overflow-hidden flex-col">
+    <div id="patient-sync-panel" class="hidden bg-white rounded-2xl shadow-2xl border border-slate-200 w-[440px] overflow-hidden flex-col">
       <!-- Tabs -->
       <div class="flex border-b border-slate-200 bg-slate-50">
-        <button id="tab-chat" class="flex-1 py-3 text-xs font-bold text-[#0CA854] border-b-2 border-[#0CA854]">Chat</button>
-        <button id="tab-rx" class="flex-1 py-3 text-xs font-bold text-slate-500 hover:text-slate-700">Prescriptions</button>
-        <button id="tab-insurance" class="flex-1 py-3 text-xs font-bold text-slate-500 hover:text-slate-700">Insurance & Billing</button>
+        <button id="tab-chat" class="flex-1 py-2.5 text-[10px] font-bold text-[#0CA854] border-b-2 border-[#0CA854]">Chat</button>
+        <button id="tab-rx" class="flex-1 py-2.5 text-[10px] font-bold text-slate-500 hover:text-slate-700">Prescriptions</button>
+        <button id="tab-insurance" class="flex-1 py-2.5 text-[10px] font-bold text-slate-500 hover:text-slate-700">Insurance</button>
+        <button id="tab-history" class="flex-1 py-2.5 text-[10px] font-bold text-slate-500 hover:text-slate-700">Past Visits</button>
       </div>
       
       <!-- Content -->
@@ -210,6 +211,11 @@
 
         <!-- Insurance Panel -->
         <div id="panel-insurance" class="hidden flex-col h-full w-full p-6 overflow-y-auto bg-white space-y-6">
+          <!-- Populated dynamically by router.js -->
+        </div>
+
+        <!-- Past Visits / Consultation History Panel -->
+        <div id="panel-history" class="hidden flex-col h-full w-full overflow-y-auto bg-slate-50">
           <!-- Populated dynamically by router.js -->
         </div>
       </div>
