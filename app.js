@@ -457,6 +457,10 @@
             // Show the chat overlay too
             const overlay = document.getElementById('patient-portal-overlay');
             if (overlay) { overlay.classList.remove('hidden'); overlay.classList.add('flex'); }
+            // Restore queue badge
+            if (window.QueueBadge) {
+              setTimeout(() => window.QueueBadge.show(session.generatedToken), 800);
+            }
           }
         } catch(e) {}
       }
@@ -2480,14 +2484,88 @@
             </div>
           </div>
 
+          <!-- Live Queue Status Card -->
+          ${(() => {
+            const qi = window.QueueEngine ? window.QueueEngine.getQueueInfo(token) : null;
+            if (!qi) return '';
+            const colorMap = {
+              red: 'from-red-600 to-red-700 border-red-400',
+              amber: 'from-amber-500 to-orange-600 border-amber-400',
+              blue: 'from-blue-600 to-indigo-700 border-blue-400',
+              emerald: 'from-emerald-600 to-teal-700 border-emerald-400'
+            };
+            const grad = colorMap[qi.statusColor] || colorMap.emerald;
+            return `
+            <div class="max-w-md mx-auto w-full">
+              <div class="relative overflow-hidden rounded-3xl border-2 ${grad.split(' ').slice(2).join(' ')} shadow-xl">
+                <div class="absolute inset-0 bg-gradient-to-br ${grad.split(' ').slice(0,2).join(' ')} opacity-10 pointer-events-none"></div>
+                <div class="p-4 sm:p-5 space-y-3 relative z-10">
+                  <!-- Header row -->
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2.5">
+                      <div class="w-9 h-9 rounded-xl bg-gradient-to-br ${grad.split(' ').slice(0,2).join(' ')} flex items-center justify-center shadow-md">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4.5 h-4.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                      </div>
+                      <div>
+                        <div class="text-xs font-black text-slate-900">Live Queue Status</div>
+                        <div class="text-[10px] text-slate-500 flex items-center gap-1">
+                          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                          <span>Real-time tracking active</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="text-right">
+                      <div class="text-[10px] text-slate-500">Your Position</div>
+                      <div class="text-2xl font-black text-slate-900 leading-none">#${qi.queuePosition}</div>
+                    </div>
+                  </div>
+
+                  <!-- Quick stats row -->
+                  <div class="grid grid-cols-3 gap-2">
+                    <div class="bg-white rounded-xl p-2 text-center border border-slate-100 shadow-xs">
+                      <div class="text-[9px] text-slate-400 uppercase font-bold">Est. Wait</div>
+                      <div class="text-sm font-black text-slate-900">${qi.waitMinutes}m</div>
+                    </div>
+                    <div class="bg-white rounded-xl p-2 text-center border border-slate-100 shadow-xs">
+                      <div class="text-[9px] text-slate-400 uppercase font-bold">Call At</div>
+                      <div class="text-sm font-black text-slate-900">${qi.estimatedCallTime}</div>
+                    </div>
+                    <div class="bg-white rounded-xl p-2 text-center border border-slate-100 shadow-xs">
+                      <div class="text-[9px] text-slate-400 uppercase font-bold">Room</div>
+                      <div class="text-xs font-black text-slate-900 truncate">${qi.consultationMode === 'video' ? 'Online' : qi.room}</div>
+                    </div>
+                  </div>
+
+                  <!-- Serving now + CTA -->
+                  <div class="flex items-center justify-between gap-2">
+                    <div class="text-xs text-slate-500 flex items-center gap-1.5">
+                      <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse flex-shrink-0"></span>
+                      <span>Now serving: <strong class="text-slate-800">${qi.currentlyServing}</strong></span>
+                    </div>
+                    <button id="btn-open-queue-tracker" class="px-3.5 py-2 rounded-xl bg-gradient-to-r ${grad.split(' ').slice(0,2).join(' ')} text-white text-[11px] font-black shadow-md flex items-center gap-1.5 hover:opacity-90 transition-opacity">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                      <span>Track Live Queue</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            `;
+          })()}
+
           <div class="flex flex-wrap items-center justify-center gap-4 pt-2">
+            <button id="btn-open-queue-tracker-alt" class="kiosk-btn px-5 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white text-xs font-bold flex items-center gap-2 shadow-lg shadow-emerald-600/30 transition-all">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              <span>📍 Track My Queue</span>
+            </button>
+
             <button id="btn-print-token" class="kiosk-btn px-6 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold flex items-center gap-2 shadow-sm">
               <i data-lucide="printer" class="w-4 h-4"></i>
-              <span>Print Slip / Receipt</span>
+              <span>Print Slip</span>
             </button>
 
             <button id="btn-reset-kiosk" class="kiosk-btn px-4 py-3 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold">
-              New Patient Pre-Checkin
+              New Patient
             </button>
           </div>
 
@@ -2517,9 +2595,14 @@
         overlay.classList.add('flex');
       }
 
+      // --- Launch floating Queue Badge ---
+      const kioskToken = state.kiosk.generatedToken;
+      if (window.QueueBadge && kioskToken) {
+        setTimeout(() => window.QueueBadge.show(kioskToken), 600);
+      }
+
       // Mount inline chat on receipt screen
       const kioskChatRoot = document.getElementById('kiosk-chat-root');
-      const kioskToken = state.kiosk.generatedToken;
       function renderKioskChat() {
         if (kioskChatRoot && kioskToken && typeof RenderChatUI !== 'undefined') {
           kioskChatRoot.innerHTML = RenderChatUI(kioskToken.id, 'PATIENT', kioskToken.doctorName || 'Doctor');
@@ -2536,6 +2619,15 @@
           return;
         }
         renderKioskChat();
+      });
+
+      // Queue Tracker button handlers
+      ['btn-open-queue-tracker', 'btn-open-queue-tracker-alt'].forEach(id => {
+        document.getElementById(id)?.addEventListener('click', () => {
+          if (window.QueueTracker && kioskToken) {
+            window.QueueTracker.open(kioskToken);
+          }
+        });
       });
 
       $('#btn-print-token')?.addEventListener('click', () => {
@@ -2562,6 +2654,9 @@
           overlay.classList.add('hidden');
           overlay.classList.remove('flex');
         }
+
+        // Hide the live queue badge
+        if (window.QueueBadge) window.QueueBadge.hide();
 
         // Clear saved session
         localStorage.removeItem('careforge_kiosk_session');
