@@ -59,23 +59,65 @@ function RenderOrgBilling() {
                     </span>
                   </td>
                   <td class="px-6 py-4 text-right">
-                    <span class="inline-flex px-2.5 py-1 rounded-md text-[10px] font-bold uppercase ${
-                      b.paymentStatus === 'Paid' ? 'text-emerald-600 border border-emerald-200 bg-emerald-50' : 
-                      b.paymentStatus === 'Unpaid' ? 'text-rose-600 border border-rose-200 bg-rose-50' :
-                      'text-slate-600 border border-slate-200 bg-slate-50'
-                    }">
-                      ${b.paymentStatus}
-                    </span>
-                  </td>
-                </tr>
-              `}).join('')}
-            </tbody>
-          </table>
-          ${patients.length === 0 ? `<div class="p-8 text-center text-slate-500">No billing records found.</div>` : ''}
+                      <div class="flex items-center justify-end gap-2">
+                        <span class="inline-flex px-2.5 py-1 rounded-md text-[10px] font-bold uppercase ${
+                          b.paymentStatus === 'Paid' ? 'text-emerald-600 border border-emerald-200 bg-emerald-50' : 
+                          b.paymentStatus === 'Unpaid' ? 'text-rose-600 border border-rose-200 bg-rose-50' :
+                          'text-slate-600 border border-slate-200 bg-slate-50'
+                        }">
+                          ${b.paymentStatus}
+                        </span>
+                        ${b.paymentStatus === 'Unpaid' ? `
+                          <button data-patient-id="${p.id}" data-amount="${b.amount}" class="btn-org-pay-bill px-2.5 py-1 rounded-md bg-[#072F5F] hover:bg-[#0c2340] text-white text-[10px] font-bold shadow-xs flex items-center gap-1 transition-all">
+                            <i data-lucide="credit-card" class="w-3 h-3"></i>
+                            <span>Pay (Razorpay)</span>
+                          </button>
+                        ` : ''}
+                      </div>
+                    </td>
+                  </tr>
+                `}).join('')}
+              </tbody>
+            </table>
+            ${patients.length === 0 ? `<div class="p-8 text-center text-slate-500">No billing records found.</div>` : ''}
+          </div>
         </div>
-      </div>
-    </main>
-  `;
-}
+      </main>
+    `;
+  }
 
-function AttachOrgBillingListeners() {}
+  function AttachOrgBillingListeners() {
+    document.querySelectorAll('.btn-org-pay-bill').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const patientId = btn.getAttribute('data-patient-id');
+        const amount = parseFloat(btn.getAttribute('data-amount')) || 500;
+        const patient = (window.MOCK_DATA.patients || []).find(p => p.id === patientId);
+
+        if (window.RazorpayCheckout) {
+          window.RazorpayCheckout.open({
+            amount: Math.round(amount * 100),
+            name: 'MediKiosik Hospital Billing',
+            description: `OPD Consultation & Claim Clearance for ${patient?.name || 'Patient'}`,
+            order_id: `order_BILL_${patientId}_${Date.now().toString().slice(-4)}`,
+            prefill: {
+              name: patient?.name || 'Aditya Verma',
+              contact: patient?.phone || '+919820144556'
+            },
+            handler: function(response) {
+              if (patient && patient.billing) {
+                patient.billing.paymentStatus = 'Paid';
+                patient.billing.claimStatus = 'Approved';
+                patient.billing.razorpayId = response.razorpay_payment_id;
+              }
+              alert(`Payment Successful (${response.razorpay_payment_id})! Patient ${patient?.name} bill marked as PAID.`);
+              if (typeof window.RouterNavigate === 'function') {
+                window.RouterNavigate(window.location.hash || '#organization/billing');
+              } else if (typeof renderApp === 'function') {
+                renderApp();
+              }
+            }
+          });
+        }
+      });
+    });
+  }

@@ -1559,6 +1559,7 @@
       const user = JSON.parse(localStorage.getItem('careforge_user')) || {};
       const patientId = user.id || state.kiosk.patient.id || 'pat-1';
       const patientName = $('#modal-patient-name')?.value || user.name || 'Aditya Verma';
+      const patientPhone = $('#modal-patient-phone')?.value || '+91 98201 44556';
       const mode = state.portal.bookingMode || 'video';
       const date = $('#modal-booking-date')?.value || state.portal.bookingDate || 'Today';
       const slot = $('#modal-booking-slot')?.value || state.portal.bookingSlot || '10:30 AM';
@@ -1577,25 +1578,48 @@
         time: slot,
         mode: mode,
         status: 'Confirmed',
+        paymentStatus: 'Paid',
         fee: fee,
         room: doc.room || 'OPD Room 04',
         videoRoomUrl: doc.videoRoomUrl || `https://meet.careforge.live/room-${aptId}`,
         complaint: complaint
       };
 
-      if (window.SyncEngine) {
-        window.SyncEngine.addAppointment(appointmentObj);
-      }
+      if (window.RazorpayCheckout) {
+        window.RazorpayCheckout.open({
+          amount: Math.round(fee * 100),
+          name: 'MediKiosik Doctor OPD',
+          description: `Consultation with ${doc.name} (${mode.toUpperCase()})`,
+          order_id: `order_DOC_${aptId}`,
+          prefill: {
+            name: patientName,
+            contact: patientPhone
+          },
+          handler: function(response) {
+            appointmentObj.razorpayPaymentId = response.razorpay_payment_id;
+            appointmentObj.paymentMethod = `Razorpay (${response.method || 'Online'})`;
+            
+            if (window.SyncEngine) {
+              window.SyncEngine.addAppointment(appointmentObj);
+            }
 
-      state.portal.bookingModalOpen = false;
-
-      if (mode === 'video' || mode === 'hybrid') {
-        alert(`Appointment ${aptId} confirmed! Live Video Consultation link generated.`);
+            state.portal.bookingModalOpen = false;
+            alert(`Payment Successful (${response.razorpay_payment_id})! Appointment #${aptId} confirmed with ${doc.name}.`);
+            renderActiveTab();
+          }
+        });
       } else {
-        alert(`In-Person OPD Token #${aptId} booked for ${doc.name} at ${doc.room || 'OPD Room 04'}!`);
+        if (window.SyncEngine) {
+          window.SyncEngine.addAppointment(appointmentObj);
+        }
+        state.portal.bookingModalOpen = false;
+        if (mode === 'video' || mode === 'hybrid') {
+          alert(`Appointment ${aptId} confirmed! Live Video Consultation link generated.`);
+        } else {
+          alert(`In-Person OPD Token #${aptId} booked for ${doc.name} at ${doc.room || 'OPD Room 04'}!`);
+        }
+        renderActiveTab();
       }
-
-      renderActiveTab();
     });
 
     // 13. Cancel Appointment
@@ -3631,15 +3655,27 @@
 
                     <!-- Payment Mode -->
                     <div class="pt-4 border-t border-slate-100 space-y-3">
-                      <label class="block font-bold text-slate-800 text-xs">Choose Payment Method</label>
+                      <div class="flex items-center justify-between">
+                        <label class="block font-bold text-slate-800 text-xs">Choose Payment Method</label>
+                        <button type="button" id="btn-quick-razorpay-demo" class="text-[10px] text-blue-600 hover:text-blue-700 font-bold flex items-center gap-1">
+                          <i data-lucide="zap" class="w-3 h-3"></i>
+                          <span>Test Razorpay UI</span>
+                        </button>
+                      </div>
                       
                       <div class="space-y-2">
-                        <label class="p-3 rounded-xl border flex items-center justify-between cursor-pointer ${state.pharmacy.paymentMethod === 'UPI' ? 'border-[#0CA854] bg-emerald-50/40 font-bold' : 'border-slate-200'}">
-                          <div class="flex items-center gap-2 text-xs">
-                            <input type="radio" name="payment-method" value="UPI" ${state.pharmacy.paymentMethod === 'UPI' ? 'checked' : ''} class="pharmacy-pay-radio text-[#0CA854]" />
-                            <span>Instant UPI (GPay / PhonePe / Paytm)</span>
+                        <label class="p-3 rounded-xl border flex items-center justify-between cursor-pointer ${state.pharmacy.paymentMethod === 'RAZORPAY' || state.pharmacy.paymentMethod === 'UPI' ? 'border-blue-600 bg-blue-50/50 font-bold' : 'border-slate-200'}">
+                          <div class="flex items-center gap-2.5 text-xs">
+                            <input type="radio" name="payment-method" value="RAZORPAY" ${state.pharmacy.paymentMethod === 'RAZORPAY' || state.pharmacy.paymentMethod === 'UPI' ? 'checked' : ''} class="pharmacy-pay-radio text-blue-600" />
+                            <div>
+                              <span class="text-slate-900 font-bold">Online Payment (Razorpay)</span>
+                              <div class="text-[10px] text-slate-500 font-normal">UPI · Cards · Netbanking · Wallets</div>
+                            </div>
                           </div>
-                          <i data-lucide="qr-code" class="w-4 h-4 text-slate-600"></i>
+                          <div class="flex items-center gap-1">
+                            <span class="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-blue-100 text-blue-800">Fast Pay</span>
+                            <i data-lucide="shield-check" class="w-4 h-4 text-blue-600"></i>
+                          </div>
                         </label>
 
                         <label class="p-3 rounded-xl border flex items-center justify-between cursor-pointer ${state.pharmacy.paymentMethod === 'COD' ? 'border-[#0CA854] bg-emerald-50/40 font-bold' : 'border-slate-200'}">
@@ -4215,7 +4251,7 @@
         items: JSON.parse(JSON.stringify(cartItems)),
         totalAmount: grandTotal,
         deliveryMode: state.pharmacy.selectedDeliveryMode === 'express' ? '⚡ Express Hospital Hub (30 Mins)' : '🚚 Standard Same-Day Home Delivery',
-        paymentMethod: `${state.pharmacy.paymentMethod} - Verified`,
+        paymentMethod: `${state.pharmacy.paymentMethod || 'RAZORPAY'} - Verified`,
         status: 'Out for Delivery',
         rider: {
           name: 'Sanjay Shinde (MHSSCE Express)',
@@ -4225,17 +4261,62 @@
         }
       };
 
-      if (window.SyncEngine) {
-        window.SyncEngine.addPharmacyOrder(orderObj);
+      const isCod = state.pharmacy.paymentMethod === 'COD';
+
+      if (!isCod && window.RazorpayCheckout) {
+        window.RazorpayCheckout.open({
+          amount: Math.round(grandTotal * 100),
+          name: 'MediKiosik Central Pharmacy',
+          description: `Hospital Home Delivery (${cartItems.length} items)`,
+          order_id: `order_PH_${orderObj.orderId}`,
+          prefill: {
+            name: addrName,
+            contact: addrPhone
+          },
+          handler: function(response) {
+            orderObj.paymentMethod = `Razorpay (${response.method || 'Online'}) - Paid [${response.razorpay_payment_id}]`;
+            orderObj.razorpayPaymentId = response.razorpay_payment_id;
+
+            if (window.SyncEngine) {
+              window.SyncEngine.addPharmacyOrder(orderObj);
+            }
+
+            // Clear cart & switch to tracking
+            state.pharmacy.cart = [];
+            state.pharmacy.activeView = 'tracking';
+            state.pharmacy.activeTrackingOrderId = orderObj.orderId;
+
+            alert(`Payment Successful (${response.razorpay_payment_id})! Order ${orderObj.orderId} placed successfully. Rider assigned for 30-min express home delivery.`);
+            renderApp();
+          }
+        });
+      } else {
+        if (window.SyncEngine) {
+          window.SyncEngine.addPharmacyOrder(orderObj);
+        }
+
+        // Clear cart & switch to tracking
+        state.pharmacy.cart = [];
+        state.pharmacy.activeView = 'tracking';
+        state.pharmacy.activeTrackingOrderId = orderObj.orderId;
+
+        alert(`Order ${orderObj.orderId} placed successfully! Rider assigned for 30-min express home delivery.`);
+        renderApp();
       }
+    });
 
-      // Clear cart & switch to tracking
-      state.pharmacy.cart = [];
-      state.pharmacy.activeView = 'tracking';
-      state.pharmacy.activeTrackingOrderId = orderObj.orderId;
-
-      alert(`Order ${orderObj.orderId} placed successfully! Rider assigned for 30-min express home delivery.`);
-      renderApp();
+    // 19. Quick Razorpay Demo Trigger Button
+    $('#btn-quick-razorpay-demo')?.addEventListener('click', () => {
+      if (window.RazorpayCheckout) {
+        window.RazorpayCheckout.open({
+          amount: 24900,
+          name: 'MediKiosik Healthcare',
+          description: 'Pharmacy & OPD Consultation Sandbox',
+          handler: function(resp) {
+            alert(`Razorpay Demo Payment Succeeded!\nPayment ID: ${resp.razorpay_payment_id}\nMethod: ${resp.method}`);
+          }
+        });
+      }
     });
   }
 
