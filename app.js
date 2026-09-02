@@ -34,8 +34,12 @@
         gender: 'Male',
         phone: '',
         abhaId: '',
+        consultationMode: 'video', // 'video' | 'in-person' | 'hybrid'
         department: 'General Medicine & Triage',
-        doctorName: 'Dr. Arjun Sharma',
+        doctorName: 'Dr. Ananya Sharma',
+        bookingDate: 'Today',
+        bookingSlot: '10:30 AM',
+        videoRoomUrl: 'https://meet.careforge.live/dr-ananya-sharma-room',
         chiefComplaint: '',
         selectedSymptoms: [],
         duration: 'Just Today (< 24 Hours)',
@@ -282,15 +286,19 @@
   // --- OPD Token & AI Summary Generator ---
   function generateKioskToken() {
     const p = state.kiosk.patient;
+    const mode = p.consultationMode || 'video';
     const tokenNumber = state.kiosk.isRedFlagTriggered 
-      ? 'OPD-EMG-' + Math.floor(100 + Math.random() * 900)
-      : 'OPD-MED-' + Math.floor(1000 + Math.random() * 9000);
+      ? 'EMG-' + Math.floor(100 + Math.random() * 900)
+      : (mode === 'video' ? 'VID-' : mode === 'hybrid' ? 'HYB-' : 'OPD-') + Math.floor(1000 + Math.random() * 9000);
 
     const triageLevel = state.kiosk.isRedFlagTriggered 
       ? 'EMERGENCY_RED_FLAG'
       : (p.painScore >= 8 ? 'URGENT' : 'ROUTINE');
 
-    const summary = `${p.age || '45'}-year-old ${p.gender || 'Patient'} presenting with ${p.chiefComplaint || 'generalized symptoms'} lasting for ${p.duration || 'recent onset'}. Pain score rated ${p.painScore}/10. Past conditions: ${p.pastConditions.length ? p.pastConditions.join(', ') : 'None reported'}. Current medications: ${p.medications || 'None'}. Allergies: ${p.allergies.length ? p.allergies.join(', ') : 'NKDA'}. Scanned documents attached: ${p.scannedDocs.length}. Triage: ${triageLevel}.`;
+    const summary = `${p.age || '45'}-year-old ${p.gender || 'Patient'} booked for ${mode.toUpperCase()} consultation with ${p.doctorName || 'Doctor'}. Primary complaint: ${p.chiefComplaint || 'generalized symptoms'} (${p.duration || 'recent onset'}). Pain score: ${p.painScore}/10. Past conditions: ${p.pastConditions.length ? p.pastConditions.join(', ') : 'None'}. Current meds: ${p.medications || 'None'}. Allergies: ${p.allergies.length ? p.allergies.join(', ') : 'NKDA'}. Triage: ${triageLevel}.`;
+
+    const docObj = (window.MEDIKIOSIK_DATA.doctors || []).find(d => d.name === p.doctorName) || (window.MEDIKIOSIK_DATA.doctors && window.MEDIKIOSIK_DATA.doctors[0]);
+    const videoUrl = docObj?.videoRoomUrl || `https://meet.careforge.live/room-${tokenNumber}`;
 
     const tokenObj = {
       id: 'pat-' + Date.now(),
@@ -300,15 +308,20 @@
       gender: p.gender || 'Male',
       phone: p.phone || '+91 98765 43210',
       abhaId: p.abhaId || '91-8842-1920-3341',
+      consultationMode: mode,
+      bookingDate: p.bookingDate || 'Today',
+      bookingSlot: p.bookingSlot || '10:30 AM',
+      videoRoomUrl: videoUrl,
       triageLevel: triageLevel,
-      triageReason: state.kiosk.isRedFlagTriggered ? 'Emergency symptoms detected by rule engine' : 'OPD Pre-Checkin Complete',
-      arrivalStatus: 'Waiting',
+      triageReason: state.kiosk.isRedFlagTriggered ? 'Emergency symptoms detected by rule engine' : `${mode.toUpperCase()} Pre-Checkin Complete`,
+      arrivalStatus: mode === 'video' ? 'Online Video Ready' : 'Waiting in OPD',
       checkInTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      appointmentTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      appointmentTime: `${p.bookingDate || 'Today'} · ${p.bookingSlot || '10:30 AM'}`,
       department: p.department || 'General Medicine & Triage',
-      doctorName: p.doctorName || 'Dr. Arjun Sharma',
-      doctor: p.doctorName || 'Dr. Arjun Sharma',
-      chiefComplaint: p.chiefComplaint || 'Routine medical review',
+      doctorName: p.doctorName || 'Dr. Ananya Sharma',
+      doctor: p.doctorName || 'Dr. Ananya Sharma',
+      room: docObj?.room || 'OPD Room 04',
+      chiefComplaint: p.chiefComplaint || 'General medical review',
       duration: p.duration,
       painScore: p.painScore,
       symptoms: p.selectedSymptoms,
@@ -322,7 +335,7 @@
       finalDiagnosis: '',
       status: 'Waiting',
       billing: {
-        amount: state.kiosk.isRedFlagTriggered ? 5000.00 : 1500.00,
+        amount: mode === 'video' ? (docObj?.videoFee || 400.00) : mode === 'hybrid' ? (docObj?.hybridFee || 650.00) : (docObj?.inPersonFee || 500.00),
         insuranceProvider: p.insurance || 'Walk-in / Cash',
         policyNumber: 'N/A',
         claimStatus: 'Pending',
@@ -335,6 +348,23 @@
     if (window.SyncEngine) {
       window.SyncEngine.addPatient(tokenObj);
       state.doctor.patients = window.SyncEngine.getPatients();
+
+      // Also register into appointments list
+      window.SyncEngine.addAppointment({
+        id: tokenNumber,
+        patientId: tokenObj.id,
+        patientName: tokenObj.name,
+        doctorName: tokenObj.doctorName,
+        dept: tokenObj.department,
+        date: p.bookingDate || 'Today',
+        time: p.bookingSlot || '10:30 AM',
+        mode: mode,
+        status: 'Confirmed',
+        fee: tokenObj.billing.amount,
+        room: tokenObj.room,
+        videoRoomUrl: videoUrl,
+        complaint: p.chiefComplaint || 'Pre-checkin consultation'
+      });
     } else {
       if (triageLevel === 'EMERGENCY_RED_FLAG') {
         state.doctor.patients.unshift(tokenObj);
@@ -841,7 +871,7 @@
                       <div class="p-6 space-y-4">
                         <div class="flex items-start gap-4">
                           <div class="relative">
-                            <img src="${doc.image}" alt="${doc.name}" class="w-16 h-16 rounded-2xl object-cover shadow-md group-hover:scale-105 transition-transform" />
+                            <img src="${doc.image}" alt="${doc.name}" class="w-16 h-16 rounded-2xl object-cover shadow-md group-hover:scale-105 transition-transform" onerror="this.onerror=null; this.src='/neutral_glass_doctor_1788294019521.jpg'" />
                             <span class="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full"></span>
                           </div>
 
@@ -1152,7 +1182,7 @@
                 
                 <div class="flex items-center justify-between border-b border-slate-100 pb-4">
                   <div class="flex items-center gap-3">
-                    <img src="${doc.image}" alt="${doc.name}" class="w-12 h-12 rounded-2xl object-cover shadow-sm" />
+                    <img src="${doc.image}" alt="${doc.name}" class="w-12 h-12 rounded-2xl object-cover shadow-sm" onerror="this.onerror=null; this.src='/neutral_glass_doctor_1788294019521.jpg'" />
                     <div>
                       <h3 class="font-black text-slate-900 text-base md:text-lg">Book Consultation with ${doc.name}</h3>
                       <p class="text-xs text-slate-500">${doc.dept} · ${doc.room || 'Room 04'}</p>
@@ -1698,35 +1728,46 @@
     const isHi = state.kiosk.lang === 'hi';
 
     if (state.kiosk.step === 1) {
+      const depts = window.MEDIKIOSIK_DATA.departments || [];
+      const allDoctors = window.MEDIKIOSIK_DATA.doctors || [];
+      const currentMode = p.consultationMode || 'video';
+
+      // Find doctor for currently chosen dept
+      const currentDeptDoctors = allDoctors.filter(d => 
+        !p.department || p.department === 'General Medicine & Triage' || d.dept.toLowerCase().includes(p.department.toLowerCase()) || p.department.toLowerCase().includes(d.dept.toLowerCase())
+      );
+      const activeDoc = allDoctors.find(d => d.name === p.doctorName) || currentDeptDoctors[0] || allDoctors[0];
+
       container.innerHTML = `
         <div class="space-y-6">
           <div class="border-b border-slate-100 pb-4">
             <h3 class="text-xl font-bold text-slate-900">${getI18n('step1')}</h3>
-            <p class="text-xs text-slate-500 mt-1">Please enter your basic information or scan your ABHA Health Card.</p>
+            <p class="text-xs text-slate-500 mt-1">Please enter your basic information and select your preferred consultation type.</p>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="space-y-2">
+          <!-- 1. Demographics Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="space-y-1.5">
               <label class="text-xs font-bold text-slate-700 uppercase">${getI18n('patientName')} *</label>
-              <input id="input-pat-name" type="text" value="${p.name}" placeholder="e.g. Ramesh Chandra / अनीता देवी" class="w-full px-4 py-3.5 rounded-xl border border-slate-300 text-slate-900 text-base focus:ring-2 focus:ring-[#0CA854] outline-none" />
+              <input id="input-pat-name" type="text" value="${p.name}" placeholder="e.g. Ramesh Chandra / अनीता देवी" class="w-full px-4 py-3 rounded-xl border border-slate-300 text-slate-900 text-sm focus:ring-2 focus:ring-slate-900 outline-none" />
             </div>
 
-            <div class="space-y-2">
+            <div class="space-y-1.5">
               <label class="text-xs font-bold text-slate-700 uppercase">${getI18n('phoneOrAbha')}</label>
-              <input id="input-pat-phone" type="text" value="${p.phone || p.abhaId}" placeholder="e.g. 9876543210 or 32-1123-4455-9001" class="w-full px-4 py-3.5 rounded-xl border border-slate-300 text-slate-900 text-base focus:ring-2 focus:ring-[#0CA854] outline-none" />
+              <input id="input-pat-phone" type="text" value="${p.phone || p.abhaId}" placeholder="e.g. 9876543210 or 32-1123-4455-9001" class="w-full px-4 py-3 rounded-xl border border-slate-300 text-slate-900 text-sm focus:ring-2 focus:ring-slate-900 outline-none" />
             </div>
 
-            <div class="space-y-2">
+            <div class="space-y-1.5">
               <label class="text-xs font-bold text-slate-700 uppercase">${getI18n('age')} *</label>
-              <input id="input-pat-age" type="number" min="1" max="120" value="${p.age || ''}" placeholder="e.g. 48" class="w-full px-4 py-3.5 rounded-xl border border-slate-300 text-slate-900 text-base focus:ring-2 focus:ring-[#0CA854] outline-none" />
+              <input id="input-pat-age" type="number" min="1" max="120" value="${p.age || ''}" placeholder="e.g. 48" class="w-full px-4 py-3 rounded-xl border border-slate-300 text-slate-900 text-sm focus:ring-2 focus:ring-slate-900 outline-none" />
             </div>
 
-            <div class="space-y-2">
+            <div class="space-y-1.5">
               <label class="text-xs font-bold text-slate-700 uppercase">${getI18n('gender')}</label>
               <div class="grid grid-cols-3 gap-2">
                 ${['Male', 'Female', 'Other'].map(g => `
-                  <button type="button" class="gender-chip-btn py-3 rounded-xl border text-xs font-bold transition-all ${
-                    p.gender === g ? 'bg-emerald-50 border-[#0CA854] text-[#0CA854]' : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+                  <button type="button" class="gender-chip-btn py-2.5 rounded-xl border text-xs font-bold transition-all ${
+                    p.gender === g ? 'bg-slate-900 border-slate-900 text-white' : 'border-slate-200 text-slate-700 hover:bg-slate-50'
                   }" data-gender="${g}">
                     ${isHi ? (g === 'Male' ? 'पुरुष' : (g === 'Female' ? 'महिला' : 'अन्य')) : g}
                   </button>
@@ -1735,20 +1776,123 @@
             </div>
           </div>
 
-          <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs text-slate-600">
+          <!-- 2. Consultation & Booking Mode Selector -->
+          <div class="space-y-2 pt-2 border-t border-slate-100">
+            <label class="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+              Choose Consultation Mode *
+            </label>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              
+              <!-- Mode 1: Video Slot -->
+              <label class="p-3.5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between ${
+                currentMode === 'video' ? 'border-purple-600 bg-purple-50/60 shadow-xs' : 'border-slate-200 bg-white hover:border-slate-300'
+              }">
+                <div class="flex items-center justify-between">
+                  <input type="radio" name="kiosk-consultation-mode" value="video" ${currentMode === 'video' ? 'checked' : ''} class="kiosk-mode-radio text-purple-600 focus:ring-purple-500" />
+                  <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-purple-100 text-purple-800">Popular</span>
+                </div>
+                <div class="mt-2 space-y-0.5">
+                  <div class="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                    <i data-lucide="video" class="w-4 h-4 text-purple-600"></i>
+                    <span>Book Doctor Video Slot</span>
+                  </div>
+                  <p class="text-[10px] text-slate-500">HD Live Telehealth Call</p>
+                </div>
+                <div class="mt-2 text-xs font-black text-purple-700">₹${activeDoc.videoFee || 400}</div>
+              </label>
+
+              <!-- Mode 2: In-Person OPD -->
+              <label class="p-3.5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between ${
+                currentMode === 'in-person' ? 'border-slate-900 bg-slate-50 shadow-xs' : 'border-slate-200 bg-white hover:border-slate-300'
+              }">
+                <div class="flex items-center justify-between">
+                  <input type="radio" name="kiosk-consultation-mode" value="in-person" ${currentMode === 'in-person' ? 'checked' : ''} class="kiosk-mode-radio text-slate-900 focus:ring-slate-900" />
+                  <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-slate-200 text-slate-800">OPD</span>
+                </div>
+                <div class="mt-2 space-y-0.5">
+                  <div class="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                    <i data-lucide="building-2" class="w-4 h-4 text-slate-800"></i>
+                    <span>In-Person OPD Walk-In</span>
+                  </div>
+                  <p class="text-[10px] text-slate-500">Hospital Visit & Token</p>
+                </div>
+                <div class="mt-2 text-xs font-black text-slate-900">₹${activeDoc.inPersonFee || 500}</div>
+              </label>
+
+              <!-- Mode 3: Hybrid Care -->
+              <label class="p-3.5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between ${
+                currentMode === 'hybrid' ? 'border-amber-500 bg-amber-50/60 shadow-xs' : 'border-slate-200 bg-white hover:border-slate-300'
+              }">
+                <div class="flex items-center justify-between">
+                  <input type="radio" name="kiosk-consultation-mode" value="hybrid" ${currentMode === 'hybrid' ? 'checked' : ''} class="kiosk-mode-radio text-amber-600 focus:ring-amber-500" />
+                  <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-amber-100 text-amber-800">Best Care</span>
+                </div>
+                <div class="mt-2 space-y-0.5">
+                  <div class="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                    <i data-lucide="repeat" class="w-4 h-4 text-amber-600"></i>
+                    <span>Hybrid Consultation</span>
+                  </div>
+                  <p class="text-[10px] text-slate-500">Video Triage + OPD Visit</p>
+                </div>
+                <div class="mt-2 text-xs font-black text-amber-700">₹${activeDoc.hybridFee || 650}</div>
+              </label>
+
+            </div>
+          </div>
+
+          <!-- 3. Select Department, Doctor & Time Slot -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Department</label>
+              <select id="kiosk-select-dept" class="w-full p-2.5 rounded-xl border border-slate-300 bg-white font-semibold text-slate-900 focus:ring-2 focus:ring-slate-900">
+                ${depts.map(d => `
+                  <option value="${d.name}" ${p.department === d.name ? 'selected' : ''}>${d.name}</option>
+                `).join('')}
+              </select>
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Assigned Doctor</label>
+              <select id="kiosk-select-doc" class="w-full p-2.5 rounded-xl border border-slate-300 bg-white font-semibold text-slate-900 focus:ring-2 focus:ring-slate-900">
+                ${allDoctors.map(d => `
+                  <option value="${d.name}" ${p.doctorName === d.name ? 'selected' : ''}>${d.name} (${d.room || 'Room 04'})</option>
+                `).join('')}
+              </select>
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Date & Time Slot</label>
+              <div class="grid grid-cols-2 gap-1.5">
+                <select id="kiosk-select-date" class="w-full p-2 rounded-xl border border-slate-300 bg-white text-xs font-semibold">
+                  <option value="Today" ${p.bookingDate === 'Today' ? 'selected' : ''}>Today</option>
+                  <option value="Tomorrow" ${p.bookingDate === 'Tomorrow' ? 'selected' : ''}>Tomorrow</option>
+                  <option value="Fri, 05 Sep" ${p.bookingDate === 'Fri, 05 Sep' ? 'selected' : ''}>Fri, 05 Sep</option>
+                </select>
+                <select id="kiosk-select-slot" class="w-full p-2 rounded-xl border border-slate-300 bg-white text-xs font-semibold">
+                  <option value="09:30 AM" ${p.bookingSlot === '09:30 AM' ? 'selected' : ''}>09:30 AM</option>
+                  <option value="10:30 AM" ${p.bookingSlot === '10:30 AM' ? 'selected' : ''}>10:30 AM</option>
+                  <option value="11:30 AM" ${p.bookingSlot === '11:30 AM' ? 'selected' : ''}>11:30 AM</option>
+                  <option value="01:00 PM" ${p.bookingSlot === '01:00 PM' ? 'selected' : ''}>01:00 PM</option>
+                  <option value="05:00 PM" ${p.bookingSlot === '05:00 PM' ? 'selected' : ''}>05:00 PM</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-3.5 rounded-xl bg-white border border-slate-200 flex items-center justify-between text-xs text-slate-600">
             <div class="flex items-center gap-2">
-              <i data-lucide="shield-check" class="w-4 h-4 text-[#0CA854]"></i>
+              <i data-lucide="shield-check" class="w-4 h-4 text-slate-800"></i>
               <span>ABDM ABHA Health ID Sync Enabled</span>
             </div>
-            <button id="btn-quick-fill-demo" class="text-xs font-bold text-[#0CA854] hover:underline">
+            <button id="btn-quick-fill-demo" class="text-xs font-bold text-slate-900 hover:underline">
               ⚡ Quick Fill Sample Profile
             </button>
           </div>
         </div>
 
         <div class="pt-6 border-t border-slate-100 flex items-center justify-end">
-          <button id="kiosk-next-1" class="kiosk-btn px-8 py-3.5 rounded-xl bg-[#0CA854] hover:bg-[#087F3F] text-white font-bold text-base shadow-lg shadow-emerald-700/30 flex items-center gap-2">
-            <span>${getI18n('btnNext')}</span>
+          <button id="kiosk-next-1" class="kiosk-btn px-8 py-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-base shadow-md flex items-center gap-2 transition-all hover:scale-102">
+            <span>Continue to Symptoms →</span>
           </button>
         </div>
       `;
@@ -1768,10 +1912,36 @@
         });
       });
 
+      $$('.kiosk-mode-radio').forEach(r => {
+        r.addEventListener('change', (e) => {
+          state.kiosk.patient.consultationMode = e.target.value;
+          renderKioskStep();
+        });
+      });
+
+      $('#kiosk-select-dept')?.addEventListener('change', (e) => {
+        state.kiosk.patient.department = e.target.value;
+        const matchingDoc = allDoctors.find(d => d.dept.toLowerCase().includes(e.target.value.toLowerCase()));
+        if (matchingDoc) state.kiosk.patient.doctorName = matchingDoc.name;
+        renderKioskStep();
+      });
+
+      $('#kiosk-select-doc')?.addEventListener('change', (e) => {
+        state.kiosk.patient.doctorName = e.target.value;
+      });
+
+      $('#kiosk-select-date')?.addEventListener('change', (e) => {
+        state.kiosk.patient.bookingDate = e.target.value;
+      });
+
+      $('#kiosk-select-slot')?.addEventListener('change', (e) => {
+        state.kiosk.patient.bookingSlot = e.target.value;
+      });
+
       $('#kiosk-next-1')?.addEventListener('click', () => {
-        state.kiosk.patient.name = $('#input-pat-name').value || 'Patient ' + Math.floor(Math.random() * 900);
-        state.kiosk.patient.phone = $('#input-pat-phone').value || '+91 98000 11223';
-        state.kiosk.patient.age = $('#input-pat-age').value || '45';
+        state.kiosk.patient.name = $('#input-pat-name')?.value || 'Patient ' + Math.floor(Math.random() * 900);
+        state.kiosk.patient.phone = $('#input-pat-phone')?.value || '+91 98000 11223';
+        state.kiosk.patient.age = $('#input-pat-age')?.value || '45';
         state.kiosk.step = 2;
         renderKioskStep();
       });
@@ -2217,72 +2387,98 @@
     } else if (state.kiosk.step === 7) {
       const token = state.kiosk.generatedToken;
       const isRed = token.triageLevel === 'EMERGENCY_RED_FLAG';
+      const isVideo = token.consultationMode === 'video';
+      const isHybrid = token.consultationMode === 'hybrid';
+
+      const docObj = (window.MEDIKIOSIK_DATA.doctors || []).find(d => d.name === token.doctorName);
+      const docImage = docObj?.image || '/neutral_glass_doctor_1788294019521.jpg';
 
       container.innerHTML = `
         <div class="space-y-6">
           <div class="text-center space-y-2">
-            <div class="w-16 h-16 rounded-full ${isRed ? 'bg-red-100 text-red-600 red-flag-pulse' : 'bg-emerald-100 text-[#0CA854]'} mx-auto flex items-center justify-center">
-              <i data-lucide="${isRed ? 'alert-octagon' : 'check-circle'}" class="w-8 h-8"></i>
+            <div class="w-16 h-16 rounded-full ${isRed ? 'bg-red-100 text-red-600 red-flag-pulse' : isVideo ? 'bg-purple-100 text-purple-700' : isHybrid ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-900'} mx-auto flex items-center justify-center">
+              <i data-lucide="${isRed ? 'alert-octagon' : isVideo ? 'video' : isHybrid ? 'repeat' : 'check-circle'}" class="w-8 h-8"></i>
             </div>
-            <h3 class="text-2xl font-black text-slate-900">${getI18n('tokenGenerated')}</h3>
-            <p class="text-xs text-slate-500">${getI18n('tokenMsg')}</p>
+            <h3 class="text-2xl font-black text-slate-900">
+              ${isVideo ? 'Doctor Video Slot Confirmed!' : isHybrid ? 'Hybrid Consultation Booked!' : getI18n('tokenGenerated')}
+            </h3>
+            <p class="text-xs text-slate-500">
+              ${isVideo ? 'Your secure ABDM telemedicine video consultation room is ready.' : getI18n('tokenMsg')}
+            </p>
           </div>
 
-          <div id="printable-token-slip" class="max-w-md mx-auto bg-white border-2 ${isRed ? 'border-red-500 shadow-red-100' : 'border-slate-900'} rounded-3xl p-6 shadow-2xl space-y-4">
+          <div id="printable-token-slip" class="max-w-md mx-auto bg-white border-2 ${isRed ? 'border-red-500 shadow-red-100' : isVideo ? 'border-purple-500 shadow-purple-100' : 'border-slate-900'} rounded-3xl p-6 shadow-xl space-y-4">
             <div class="flex items-center justify-between border-b border-dashed border-slate-300 pb-3">
               <div>
-                <div class="text-xs font-black text-[#0CA854]">MEDIKIOSIK OPD TOKEN</div>
-                <div class="text-[10px] text-slate-500">AI Pre-Consultation Summary</div>
+                <div class="text-xs font-black ${isVideo ? 'text-purple-700' : 'text-slate-900'}">
+                  ${isVideo ? '📹 TELEHEALTH VIDEO SLOT' : isHybrid ? '🔄 HYBRID OPD PASS' : 'MEDIKIOSIK OPD TOKEN'}
+                </div>
+                <div class="text-[10px] text-slate-500">MHSSCE Healthcare Network</div>
               </div>
               <div class="text-right">
-                <span class="text-[10px] font-bold px-2 py-0.5 rounded ${isRed ? 'bg-red-600 text-white' : 'bg-slate-900 text-white'}">${token.triageLevel}</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded ${isRed ? 'bg-red-600 text-white' : isVideo ? 'bg-purple-600 text-white' : 'bg-slate-900 text-white'}">
+                  ${isVideo ? 'Video Confirmed' : token.triageLevel}
+                </span>
               </div>
             </div>
 
             <div class="text-center py-2 bg-slate-50 rounded-2xl">
-              <div class="text-xs font-bold text-slate-500">YOUR OPD TOKEN NUMBER</div>
-              <div class="text-4xl font-black tracking-wider ${isRed ? 'text-red-600' : 'text-slate-900'} mt-1">${token.token}</div>
+              <div class="text-xs font-bold text-slate-500">${isVideo ? 'APPOINTMENT REFERENCE ID' : 'YOUR OPD TOKEN NUMBER'}</div>
+              <div class="text-3xl md:text-4xl font-black tracking-wider ${isRed ? 'text-red-600' : isVideo ? 'text-purple-800' : 'text-slate-900'} mt-1 font-mono">${token.token}</div>
               <div class="text-[11px] text-slate-600 mt-1">Department: <strong>${token.department}</strong></div>
             </div>
 
             <div class="text-xs space-y-1.5 text-slate-700 pt-1">
               <div class="flex justify-between"><span class="text-slate-500">Patient:</span> <span class="font-bold">${token.name} (${token.age}y / ${token.gender})</span></div>
-              <div class="flex justify-between"><span class="text-slate-500">ABHA ID:</span> <span class="font-mono text-[11px]">${token.abhaId}</span></div>
-              <div class="flex justify-between"><span class="text-slate-500">Assigned Doctor:</span> <span class="font-bold text-[#0CA854]">${token.doctorName}</span></div>
-              <div class="flex justify-between"><span class="text-slate-500">Time Checked-in:</span> <span>${token.checkInTime}</span></div>
+              <div class="flex justify-between"><span class="text-slate-500">Assigned Specialist:</span> <span class="font-bold text-slate-900">${token.doctorName}</span></div>
+              <div class="flex justify-between"><span class="text-slate-500">Scheduled Time:</span> <span class="font-bold text-slate-800">${token.appointmentTime}</span></div>
+              <div class="flex justify-between"><span class="text-slate-500">Consultation Venue:</span> <span class="font-bold">${isVideo ? 'Online Video Call Room' : (token.room || 'OPD Room 04')}</span></div>
             </div>
 
-            <div class="p-3.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-800 text-xs space-y-1">
-              <div class="font-bold text-[11px] text-emerald-800 flex items-center gap-1">
-                <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> AI Structured History Summary
+            <!-- Video Launch Call-To-Action (If Video / Hybrid Mode) -->
+            ${isVideo || isHybrid ? `
+              <div class="pt-2 border-t border-slate-100 space-y-2">
+                <button id="btn-kiosk-launch-video" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black text-xs shadow-lg shadow-purple-600/30 flex items-center justify-center gap-2 transition-all hover:scale-102 animate-pulse">
+                  <i data-lucide="video" class="w-4 h-4 text-amber-300"></i>
+                  <span>📹 Join Live Doctor Video Consultation Room</span>
+                </button>
+                <div class="text-[10px] text-center text-slate-500">
+                  Room Link: <span class="font-mono text-purple-700 font-bold">${token.videoRoomUrl || 'https://meet.careforge.live'}</span>
+                </div>
+              </div>
+            ` : ''}
+
+            <div class="p-3 rounded-xl bg-slate-100 border border-slate-200 text-slate-800 text-xs space-y-1">
+              <div class="font-bold text-[11px] text-slate-900 flex items-center gap-1">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-slate-700"></i> AI Structured Medical Summary
               </div>
               <p class="text-[11px] text-slate-700 leading-relaxed">${token.aiSummary}</p>
             </div>
           </div>
 
           <div class="flex flex-wrap items-center justify-center gap-4 pt-2">
-            <button id="btn-print-token" class="kiosk-btn px-6 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold flex items-center gap-2">
+            <button id="btn-print-token" class="kiosk-btn px-6 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold flex items-center gap-2 shadow-sm">
               <i data-lucide="printer" class="w-4 h-4"></i>
-              <span>Print Token Slip</span>
+              <span>Print Slip / Receipt</span>
             </button>
 
             <button id="btn-reset-kiosk" class="kiosk-btn px-4 py-3 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold">
-              New Patient
+              New Patient Pre-Checkin
             </button>
           </div>
 
           <!-- Inline Chat with Doctor -->
           <div class="max-w-md mx-auto mt-4 w-full">
             <div class="flex items-center gap-3 mb-3 px-1">
-              <div class="w-8 h-8 rounded-full bg-[#0CA854]/10 flex items-center justify-center">
-                <i data-lucide="message-circle" class="w-4 h-4 text-[#0CA854]"></i>
+              <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
+                <i data-lucide="message-circle" class="w-4 h-4 text-slate-800"></i>
               </div>
               <div>
                 <h4 class="text-sm font-bold text-slate-900">Live Chat with ${token.doctorName}</h4>
                 <p class="text-[10px] text-slate-500">Send a message — your doctor can respond from their dashboard</p>
               </div>
-              <span class="ml-auto flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Live
+              <span class="ml-auto flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Connected
               </span>
             </div>
             <div id="kiosk-chat-root" class="w-full"></div>
@@ -2320,6 +2516,21 @@
 
       $('#btn-print-token')?.addEventListener('click', () => {
         window.print();
+      });
+
+      $('#btn-kiosk-launch-video')?.addEventListener('click', () => {
+        const token = state.kiosk.generatedToken;
+        if (token) {
+          const doc = (window.MEDIKIOSIK_DATA.doctors || []).find(d => d.name === token.doctorName);
+          state.portal.activeVideoCall = {
+            doctorName: token.doctorName,
+            dept: token.department,
+            doctorImage: doc?.image || '/neutral_glass_doctor_1788294019521.jpg',
+            roomUrl: token.videoRoomUrl || 'https://meet.careforge.live'
+          };
+          state.currentTab = 'portal';
+          renderApp();
+        }
       });
 
       $('#btn-reset-kiosk')?.addEventListener('click', () => {
@@ -2991,7 +3202,7 @@
             <!-- Right Visual Image (5 Cols) -->
             <div class="lg:col-span-5 relative group">
               <div class="h-56 w-full rounded-2xl overflow-hidden border border-slate-200 shadow-sm relative">
-                <img src="https://images.unsplash.com/photo-1586015555751-63c29994c6a4?w=600&auto=format&fit=crop&q=80" alt="Hospital Central Pharmacy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                <img src="https://images.unsplash.com/photo-1587854692152-cbe660dbde88?w=800&auto=format&fit=crop&q=80" alt="Hospital Central Pharmacy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1576602976047-174e57a47881?w=800&auto=format&fit=crop&q=80'" />
                 <div class="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent flex items-end p-4">
                   <div class="text-white">
                     <div class="text-xs font-bold flex items-center gap-1.5">
