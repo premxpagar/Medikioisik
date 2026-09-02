@@ -171,19 +171,54 @@ const AppRouter = {
 
     // Render RX
     if (rxs.length === 0) {
-      panelRx.innerHTML = `<div class="text-center text-xs text-slate-500 mt-4">No prescriptions received yet.</div>`;
-    } else {
-      panelRx.innerHTML = rxs.map(rx => `
-        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-          <div class="flex items-center justify-between border-b border-slate-100 pb-2 mb-2">
-            <span class="text-xs font-bold text-[#0CA854]"><i data-lucide="pill" class="inline w-3 h-3"></i> Prescription</span>
-            <span class="text-[10px] text-slate-400">${rx.date}</span>
+      panelRx.innerHTML = `
+        <div class="text-center p-6 space-y-3">
+          <div class="w-12 h-12 rounded-full bg-slate-100 text-slate-400 mx-auto flex items-center justify-center">
+            <i data-lucide="pill" class="w-6 h-6"></i>
           </div>
-          <h4 class="font-bold text-slate-900 text-sm">${rx.medication}</h4>
-          <p class="text-xs text-slate-600 mt-1">${rx.notes}</p>
-          <div class="text-[10px] text-slate-500 mt-2 italic">Prescribed by ${rx.doctorName}</div>
+          <div class="text-xs font-bold text-slate-600">No prescriptions received yet</div>
+          <p class="text-[10px] text-slate-400">Prescriptions issued by doctor will appear here and can be ordered directly for home delivery.</p>
+          <button onclick="if(window.SwitchToPharmacyTab){ window.SwitchToPharmacyTab(); document.getElementById('patient-sync-panel').classList.add('hidden'); }" class="px-4 py-2 rounded-xl bg-[#0CA854] text-white text-xs font-bold shadow-sm">
+            Browse Pharmacy & Healthcare Essentials
+          </button>
         </div>
-      `).join('');
+      `;
+    } else {
+      panelRx.innerHTML = `
+        <div class="space-y-3">
+          <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-between gap-2">
+            <div class="text-[11px] text-emerald-900 font-bold flex items-center gap-1.5">
+              <i data-lucide="truck" class="w-4 h-4 text-[#0CA854]"></i>
+              <span>30-Min Fast Home Delivery Active</span>
+            </div>
+            <button onclick="if(window.SwitchToPharmacyTab){ window.SwitchToPharmacyTab(); document.getElementById('patient-sync-panel').classList.add('hidden'); }" class="px-2.5 py-1 rounded-lg bg-[#0CA854] hover:bg-[#087F3F] text-white text-[10px] font-black shadow-xs">
+              Go to Pharmacy
+            </button>
+          </div>
+
+          ${rxs.map(rx => `
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-2">
+              <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                <span class="text-xs font-bold text-[#0CA854] flex items-center gap-1">
+                  <i data-lucide="pill" class="w-3.5 h-3.5"></i> Prescription Slip
+                </span>
+                <span class="text-[10px] text-slate-400 font-mono">${rx.date}</span>
+              </div>
+              <h4 class="font-bold text-slate-900 text-sm">${rx.medication}</h4>
+              <p class="text-xs text-slate-600">${rx.notes}</p>
+              <div class="text-[10px] text-slate-500 italic">Prescribed by ${rx.doctorName}</div>
+              
+              <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
+                <span class="text-[10px] font-bold text-emerald-700">15% Concession Available</span>
+                <button onclick="if(window.OrderRxToPharmacy){ window.OrderRxToPharmacy('${encodeURIComponent(rx.medication).replace(/'/g, "\\'")}', '${encodeURIComponent(rx.doctorName).replace(/'/g, "\\'")}'); document.getElementById('patient-sync-panel').classList.add('hidden'); }" class="px-3 py-1.5 rounded-lg bg-[#0F2942] hover:bg-[#0CA854] text-white font-bold text-[10px] flex items-center gap-1 shadow-sm transition-colors">
+                  <i data-lucide="shopping-bag" class="w-3 h-3"></i>
+                  <span>Order Home Delivery</span>
+                </button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
     }
 
     // Render Insurance

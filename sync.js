@@ -6,15 +6,54 @@ window.SyncEngine = {
     const defaultStore = {
       chats: [],
       prescriptions: [],
-      patients: window.MOCK_DATA?.patients || []
+      patients: window.MOCK_DATA?.patients || [],
+      pharmacyOrders: (window.MEDIKIOSIK_PHARMACY && window.MEDIKIOSIK_PHARMACY.sampleOrders) || [],
+      appointments: [
+        {
+          id: "apt-101",
+          patientId: "pat-1",
+          patientName: "Rahul Sharma",
+          doctorName: "Dr. Ananya Sharma",
+          dept: "General Medicine & Triage",
+          date: "Today",
+          time: "10:30 AM",
+          mode: "video", // 'in-person' | 'video' | 'hybrid'
+          status: "Confirmed",
+          fee: 400,
+          room: "OPD Room 04",
+          videoRoomUrl: "https://meet.careforge.live/dr-ananya-sharma-room",
+          complaint: "Routine health checkup & blood sugar review"
+        },
+        {
+          id: "apt-102",
+          patientId: "pat-101",
+          patientName: "Rajesh Kumar Sharma",
+          doctorName: "Dr. Ashok Seth",
+          dept: "Cardiology & Heart Care",
+          date: "Tomorrow",
+          time: "11:00 AM",
+          mode: "hybrid",
+          status: "Confirmed",
+          fee: 950,
+          room: "OPD Room 12",
+          videoRoomUrl: "https://meet.careforge.live/dr-ashok-seth-room",
+          complaint: "Cardiology follow-up & ECG consultation"
+        }
+      ]
     };
     const stored = localStorage.getItem('careforge_sync_store');
     if (stored) {
       const parsed = JSON.parse(stored);
       if (!parsed.patients) {
         parsed.patients = window.MOCK_DATA?.patients || [];
-        this.saveStore(parsed); // Save the migration
       }
+      if (!parsed.pharmacyOrders) {
+        parsed.pharmacyOrders = (window.MEDIKIOSIK_PHARMACY && window.MEDIKIOSIK_PHARMACY.sampleOrders) || [];
+      }
+      if (!parsed.appointments) {
+        parsed.appointments = defaultStore.appointments;
+      }
+      this.saveStore(parsed); // Save the migration
       return parsed;
     }
     return defaultStore;
@@ -142,6 +181,62 @@ window.SyncEngine = {
       return n ? JSON.parse(n) : null;
     } catch(e) {
       return null;
+    }
+  },
+
+  addPharmacyOrder(order) {
+    const store = this.getStore();
+    if (!store.pharmacyOrders) store.pharmacyOrders = [];
+    store.pharmacyOrders.unshift(order);
+    this.saveStore(store);
+    return order;
+  },
+
+  getPharmacyOrders(patientId) {
+    const store = this.getStore();
+    const orders = store.pharmacyOrders || [];
+    if (!patientId) return orders;
+    return orders.filter(o => o.patientId === patientId || !o.patientId);
+  },
+
+  updatePharmacyOrderStatus(orderId, newStatus) {
+    const store = this.getStore();
+    if (store.pharmacyOrders) {
+      store.pharmacyOrders = store.pharmacyOrders.map(o => {
+        if (o.orderId === orderId) {
+          return { ...o, status: newStatus };
+        }
+        return o;
+      });
+      this.saveStore(store);
+    }
+  },
+
+  addAppointment(apt) {
+    const store = this.getStore();
+    if (!store.appointments) store.appointments = [];
+    store.appointments.unshift(apt);
+    this.saveStore(store);
+    return apt;
+  },
+
+  getAppointments(patientId) {
+    const store = this.getStore();
+    const apts = store.appointments || [];
+    if (!patientId) return apts;
+    return apts.filter(a => a.patientId === patientId || !a.patientId);
+  },
+
+  cancelAppointment(aptId) {
+    const store = this.getStore();
+    if (store.appointments) {
+      store.appointments = store.appointments.map(a => {
+        if (a.id === aptId) {
+          return { ...a, status: 'Cancelled' };
+        }
+        return a;
+      });
+      this.saveStore(store);
     }
   },
 

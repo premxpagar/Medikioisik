@@ -1,0 +1,21 @@
+{
+  "name": "medikiosik",
+  "version": "1.0.0",
+  "description": "MediKiosik - Smart Hospital OPD Pre-Consultation, Telehealth Video Slots & Pharmacy System",
+  "main": "index.html",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js",
+    "serve": "npx -y serve . -l 3000"
+  },
+  "keywords": [
+    "healthcare",
+    "opd",
+    "telehealth",
+    "pharmacy",
+    "hospital",
+    "kiosk"
+  ],
+  "author": "",
+  "license": "ISC"
+}

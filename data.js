@@ -72,6 +72,7 @@ const MEDIKIOSIK_DATA = {
   ],
 
   // OPD Doctors
+  // OPD & Telemedicine Doctors
   doctors: [
     {
       id: "dr-ananya-sharma",
@@ -85,7 +86,18 @@ const MEDIKIOSIK_DATA = {
       image: "https://images.unsplash.com/photo-1651008376811-b90baee60c1f?w=500&auto=format&fit=crop&q=80",
       opdTiming: "Mon to Sat (08:30 AM - 02:00 PM)",
       room: "OPD Room 04",
-      fee: "₹500 (Free in Govt OPD)"
+      inPersonFee: 500,
+      videoFee: 400,
+      hybridFee: 650,
+      supportedModes: ["in-person", "video", "hybrid"],
+      availableDates: ["Today", "Tomorrow", "Fri, 05 Sep", "Sat, 06 Sep", "Mon, 08 Sep"],
+      availableSlots: {
+        morning: ["09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM"],
+        afternoon: ["01:00 PM", "01:30 PM", "02:00 PM", "02:30 PM"],
+        evening: ["05:00 PM", "05:30 PM", "06:00 PM"]
+      },
+      telemedicineStatus: "Available Online for Video",
+      videoRoomUrl: "https://meet.careforge.live/dr-ananya-sharma-room"
     },
     {
       id: "dr-ashok-seth",
@@ -99,7 +111,18 @@ const MEDIKIOSIK_DATA = {
       image: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=500&auto=format&fit=crop&q=80",
       opdTiming: "Mon, Wed, Fri (10:00 AM - 01:30 PM)",
       room: "OPD Room 12",
-      fee: "₹800"
+      inPersonFee: 800,
+      videoFee: 650,
+      hybridFee: 950,
+      supportedModes: ["in-person", "video", "hybrid"],
+      availableDates: ["Today", "Tomorrow", "Fri, 05 Sep", "Mon, 08 Sep"],
+      availableSlots: {
+        morning: ["10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM"],
+        afternoon: ["01:00 PM", "01:30 PM"],
+        evening: ["04:30 PM", "05:00 PM", "05:30 PM"]
+      },
+      telemedicineStatus: "Available Online for Video",
+      videoRoomUrl: "https://meet.careforge.live/dr-ashok-seth-room"
     },
     {
       id: "dr-ashok-rajgopal",
@@ -113,7 +136,18 @@ const MEDIKIOSIK_DATA = {
       image: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=500&auto=format&fit=crop&q=80",
       opdTiming: "Mon to Fri (09:00 AM - 01:00 PM)",
       room: "OPD Room 15",
-      fee: "₹700"
+      inPersonFee: 700,
+      videoFee: 550,
+      hybridFee: 850,
+      supportedModes: ["in-person", "video", "hybrid"],
+      availableDates: ["Today", "Tomorrow", "Fri, 05 Sep", "Sat, 06 Sep"],
+      availableSlots: {
+        morning: ["09:00 AM", "09:30 AM", "10:30 AM", "11:30 AM"],
+        afternoon: ["12:30 PM", "01:00 PM"],
+        evening: ["04:00 PM", "04:30 PM", "05:00 PM"]
+      },
+      telemedicineStatus: "In OPD Clinic",
+      videoRoomUrl: "https://meet.careforge.live/dr-ashok-rajgopal-room"
     },
     {
       id: "dr-vikas-maurya",
@@ -127,7 +161,68 @@ const MEDIKIOSIK_DATA = {
       image: "https://images.unsplash.com/photo-1537368910025-700350fe46c7?w=500&auto=format&fit=crop&q=80",
       opdTiming: "Tue, Thu, Sat (10:00 AM - 02:00 PM)",
       room: "OPD Room 06",
-      fee: "₹600"
+      inPersonFee: 600,
+      videoFee: 500,
+      hybridFee: 750,
+      supportedModes: ["in-person", "video", "hybrid"],
+      availableDates: ["Today", "Tomorrow", "Sat, 06 Sep", "Tue, 09 Sep"],
+      availableSlots: {
+        morning: ["10:00 AM", "10:30 AM", "11:00 AM"],
+        afternoon: ["01:00 PM", "01:30 PM", "02:00 PM"],
+        evening: ["05:30 PM", "06:00 PM", "06:30 PM"]
+      },
+      telemedicineStatus: "Available Online for Video",
+      videoRoomUrl: "https://meet.careforge.live/dr-vikas-maurya-room"
+    },
+    {
+      id: "dr-vivek-vij",
+      name: "Dr. Vivek Vij",
+      degrees: "MBBS, MS, DNB (Surg Gastro)",
+      specialty: "Senior Consultant - Gastroenterology & Liver",
+      dept: "Gastroenterology & Liver",
+      experience: "22+ Years Experience",
+      languages: "English, Hindi, Marathi",
+      rating: "4.9 (2,400+ reviews)",
+      image: "https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=500&auto=format&fit=crop&q=80",
+      opdTiming: "Mon, Wed, Fri, Sat (09:30 AM - 01:30 PM)",
+      room: "OPD Room 08",
+      inPersonFee: 650,
+      videoFee: 550,
+      hybridFee: 800,
+      supportedModes: ["in-person", "video", "hybrid"],
+      availableDates: ["Today", "Tomorrow", "Fri, 05 Sep", "Sat, 06 Sep"],
+      availableSlots: {
+        morning: ["09:30 AM", "10:00 AM", "11:00 AM", "11:30 AM"],
+        afternoon: ["01:00 PM", "02:00 PM"],
+        evening: ["05:00 PM", "06:00 PM"]
+      },
+      telemedicineStatus: "Available Online for Video",
+      videoRoomUrl: "https://meet.careforge.live/dr-vivek-vij-room"
+    },
+    {
+      id: "dr-meenakshi-sundaram",
+      name: "Dr. Meenakshi Sundaram",
+      degrees: "MBBS, MD (Paediatrics), DCH",
+      specialty: "Consultant Paediatrician & Child Health Specialist",
+      dept: "Paediatrics & Child Health",
+      experience: "14+ Years Experience",
+      languages: "English, Hindi, Tamil",
+      rating: "4.9 (1,950+ reviews)",
+      image: "https://images.unsplash.com/photo-1594824813586-78e7279375e3?w=500&auto=format&fit=crop&q=80",
+      opdTiming: "Mon to Sat (09:00 AM - 02:00 PM)",
+      room: "OPD Room 18",
+      inPersonFee: 500,
+      videoFee: 400,
+      hybridFee: 650,
+      supportedModes: ["in-person", "video", "hybrid"],
+      availableDates: ["Today", "Tomorrow", "Fri, 05 Sep", "Sat, 06 Sep"],
+      availableSlots: {
+        morning: ["09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM", "11:30 AM"],
+        afternoon: ["01:00 PM", "01:30 PM"],
+        evening: ["04:30 PM", "05:00 PM", "05:30 PM"]
+      },
+      telemedicineStatus: "Available Online for Video",
+      videoRoomUrl: "https://meet.careforge.live/dr-meenakshi-room"
     }
   ],
 
