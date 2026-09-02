@@ -44,16 +44,20 @@ window.SyncEngine = {
     const stored = localStorage.getItem('careforge_sync_store');
     if (stored) {
       const parsed = JSON.parse(stored);
+      let needsSave = false;
       if (!parsed.patients) {
         parsed.patients = window.MOCK_DATA?.patients || [];
+        needsSave = true;
       }
       if (!parsed.pharmacyOrders) {
         parsed.pharmacyOrders = (window.MEDIKIOSIK_PHARMACY && window.MEDIKIOSIK_PHARMACY.sampleOrders) || [];
+        needsSave = true;
       }
       if (!parsed.appointments) {
         parsed.appointments = defaultStore.appointments;
+        needsSave = true;
       }
-      this.saveStore(parsed); // Save the migration
+      if (needsSave) this.saveStore(parsed); // Only save when migration is actually needed
       return parsed;
     }
     return defaultStore;

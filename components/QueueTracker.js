@@ -34,8 +34,17 @@
     getQueueInfo(token) {
       if (!token) return null;
 
-      const store = window.SyncEngine ? window.SyncEngine.getStore() : { patients: [] };
-      const allPatients = store.patients || [];
+      // Read-only store access — never call saveStore here to avoid triggering sync events
+      let allPatients = [];
+      try {
+        const raw = localStorage.getItem('careforge_sync_store');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          allPatients = parsed.patients || [];
+        }
+      } catch(e) {
+        allPatients = [];
+      }
 
       // Patients registered before this token that are still Waiting or In Progress
       const tokenCheckIn = token.checkInTime || '00:00';
@@ -123,12 +132,14 @@
      */
     startLiveUpdates(tokenId, callback) {
       const interval = setInterval(() => {
-        if (!document.getElementById('queue-tracker-modal') && !document.getElementById('queue-status-badge')) {
+        const modalAlive = document.getElementById('queue-tracker-modal');
+        const badgeAlive = document.getElementById('queue-status-badge');
+        if (!modalAlive && !badgeAlive) {
           clearInterval(interval);
           return;
         }
         if (typeof callback === 'function') callback();
-      }, 15000); // Refresh every 15 seconds
+      }, 30000); // Refresh every 30 seconds — safe for performance
       return interval;
     }
   };
