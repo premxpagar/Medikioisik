@@ -613,10 +613,6 @@
                   <span>Start Kiosk Pre-Checkin (Touch & Voice)</span>
                 </button>
 
-                <a href="#portal-doctor-booking" class="flex items-center gap-2 px-6 py-4 rounded-2xl bg-[#0F2942] hover:bg-slate-800 text-white font-bold text-sm md:text-base shadow-md transition-all hover:scale-105">
-                  <i data-lucide="video" class="w-5 h-5 text-amber-300"></i>
-                  <span>Book Doctor Video Slot</span>
-                </a>
               </div>
 
               <!-- Impact Metrics -->
