@@ -2925,66 +2925,84 @@
     return `
       <div class="space-y-8 pb-16">
         
-        <!-- Pharmacy Hero & Hub Notice -->
-        <div class="relative rounded-3xl bg-gradient-to-r from-[#0F2942] via-slate-900 to-[#0CA854]/90 text-white p-6 md:p-8 shadow-2xl overflow-hidden">
-          <div class="absolute -right-16 -top-16 w-64 h-64 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none"></div>
-          <div class="absolute right-1/3 -bottom-20 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
-          <div class="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-            <div class="space-y-2 max-w-2xl">
+        <!-- Pharmacy Hero & Hub Header (Clean, Modern, Minimalist with Real Photo) -->
+        <div class="relative rounded-3xl bg-white border border-slate-200 p-6 md:p-8 shadow-sm overflow-hidden">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+            
+            <!-- Left Info Content (7 Cols) -->
+            <div class="lg:col-span-7 space-y-4">
               <div class="flex flex-wrap items-center gap-2">
-                <span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-xs font-black uppercase tracking-wider flex items-center gap-1.5">
-                  <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-300"></i> 30-Min Fast Home Delivery
+                <span class="px-3 py-1 rounded-full bg-slate-100 text-slate-800 text-xs font-bold flex items-center gap-1.5">
+                  <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-500"></i> 30-Min Express Home Delivery
                 </span>
-                <span class="px-2.5 py-1 rounded-full bg-white/10 text-slate-200 text-xs font-bold">
-                  24x7 Hospital Central Pharmacy
+                <span class="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold border border-blue-100">
+                  24x7 Central Hospital Pharmacy
                 </span>
-                <span class="px-2.5 py-1 rounded-full bg-amber-400/20 text-amber-300 text-xs font-bold border border-amber-400/30">
-                  15% OPD Concession Active
+                <span class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">
+                  15% OPD Patient Concession
                 </span>
               </div>
 
-              <h1 class="text-2xl md:text-3xl font-black tracking-tight text-white flex items-center gap-2">
-                <span>Medi<span class="text-emerald-400">Pharmacy</span> & Home Delivery</span>
-              </h1>
-              <p class="text-xs md:text-sm text-slate-300 leading-relaxed">
-                Order doctor-prescribed medications and daily healthcare essentials delivered directly to your doorstep from the <span class="text-white font-bold">MHSSCE South Mumbai Central Pharmacy Hub</span>.
-              </p>
+              <div class="space-y-1.5">
+                <h1 class="text-2xl md:text-3xl font-black tracking-tight text-slate-900">
+                  Hospital Pharmacy & Medicine Home Delivery
+                </h1>
+                <p class="text-xs md:text-sm text-slate-600 leading-relaxed max-w-xl">
+                  Order verified doctor-prescribed medications and healthcare essentials directly from the <strong class="text-slate-800">MHSSCE South Mumbai Central Pharmacy Hub</strong> with guaranteed cold-chain handling.
+                </p>
+              </div>
 
-              <div class="pt-2 flex flex-wrap items-center gap-4 text-[11px] text-slate-300">
-                <span class="flex items-center gap-1 text-emerald-400 font-semibold"><i data-lucide="shield-check" class="w-3.5 h-3.5"></i> 100% Genuine Hospital Dispensed</span>
-                <span class="flex items-center gap-1 text-emerald-400 font-semibold"><i data-lucide="snowflake" class="w-3.5 h-3.5"></i> Cold-Chain Maintained</span>
-                <span class="flex items-center gap-1 text-emerald-400 font-semibold"><i data-lucide="truck" class="w-3.5 h-3.5"></i> Free Delivery > ₹199</span>
+              <div class="flex flex-wrap items-center gap-4 text-xs text-slate-500 pt-1">
+                <span class="flex items-center gap-1.5 font-medium text-slate-700">
+                  <i data-lucide="shield-check" class="w-4 h-4 text-slate-800"></i> 100% Genuine Hospital Dispensed
+                </span>
+                <span class="flex items-center gap-1.5 font-medium text-slate-700">
+                  <i data-lucide="snowflake" class="w-4 h-4 text-slate-800"></i> Cold-Chain Maintained
+                </span>
+                <span class="flex items-center gap-1.5 font-medium text-slate-700">
+                  <i data-lucide="truck" class="w-4 h-4 text-slate-800"></i> Free Delivery on orders > ₹199
+                </span>
+              </div>
+
+              <!-- Quick Header Nav Switchers -->
+              <div class="pt-2 flex flex-wrap items-center gap-3">
+                <button id="pharmacy-btn-view-cart" class="px-5 py-3 rounded-2xl ${state.pharmacy.activeView === 'cart' ? 'bg-slate-900 text-white' : 'bg-slate-900 hover:bg-slate-800 text-white'} font-bold text-xs shadow-sm flex items-center gap-3 transition-all">
+                  <div class="flex items-center gap-2">
+                    <i data-lucide="shopping-cart" class="w-4 h-4"></i>
+                    <span>Shopping Cart</span>
+                  </div>
+                  <span class="px-2 py-0.5 rounded-full bg-white/20 text-white text-[10px] font-black">
+                    ${cartCount} items · ₹${subtotal.toFixed(2)}
+                  </span>
+                </button>
+
+                <button id="pharmacy-btn-view-orders" class="px-5 py-3 rounded-2xl ${state.pharmacy.activeView === 'tracking' ? 'bg-slate-900 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200'} font-bold text-xs flex items-center gap-2 transition-all">
+                  <i data-lucide="package" class="w-4 h-4 text-slate-600"></i>
+                  <span>Track Deliveries (${patientOrders.length})</span>
+                </button>
+
+                <button id="pharmacy-btn-open-custom-modal" class="px-4 py-3 rounded-2xl bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 font-bold text-xs flex items-center gap-1.5 transition-all">
+                  <i data-lucide="plus-circle" class="w-4 h-4 text-slate-600"></i>
+                  <span>+ Request Custom Medicine</span>
+                </button>
               </div>
             </div>
 
-            <!-- Header Quick Action Switchers -->
-            <div class="flex flex-wrap md:flex-col gap-2.5 w-full md:w-auto">
-              <button id="pharmacy-btn-view-cart" class="px-5 py-3 rounded-2xl ${state.pharmacy.activeView === 'cart' ? 'bg-white text-[#0F2942]' : 'bg-emerald-500 hover:bg-emerald-600 text-white'} font-black text-xs shadow-lg flex items-center justify-between gap-3 transition-all">
-                <div class="flex items-center gap-2">
-                  <i data-lucide="shopping-cart" class="w-4 h-4"></i>
-                  <span>Shopping Cart</span>
+            <!-- Right Visual Image (5 Cols) -->
+            <div class="lg:col-span-5 relative group">
+              <div class="h-56 w-full rounded-2xl overflow-hidden border border-slate-200 shadow-sm relative">
+                <img src="https://images.unsplash.com/photo-1586015555751-63c29994c6a4?w=600&auto=format&fit=crop&q=80" alt="Hospital Central Pharmacy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent flex items-end p-4">
+                  <div class="text-white">
+                    <div class="text-xs font-bold flex items-center gap-1.5">
+                      <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Central Dispensary Hub Active
+                    </div>
+                    <div class="text-[11px] text-slate-200">Verified Pharmacist Dispatch Team on Duty</div>
+                  </div>
                 </div>
-                <span class="px-2 py-0.5 rounded-full ${state.pharmacy.activeView === 'cart' ? 'bg-[#0F2942] text-white' : 'bg-white text-emerald-700'} text-[10px] font-black">
-                  ${cartCount} items · ₹${subtotal.toFixed(2)}
-                </span>
-              </button>
-
-              <button id="pharmacy-btn-view-orders" class="px-5 py-2.5 rounded-2xl ${state.pharmacy.activeView === 'tracking' ? 'bg-white text-[#0F2942]' : 'bg-white/10 hover:bg-white/20 text-white border border-white/20'} font-bold text-xs flex items-center justify-between gap-3 transition-all">
-                <div class="flex items-center gap-2">
-                  <i data-lucide="package" class="w-4 h-4 text-amber-300"></i>
-                  <span>Track Deliveries</span>
-                </div>
-                <span class="px-2 py-0.5 rounded-full bg-white/20 text-slate-200 text-[10px] font-bold">
-                  ${patientOrders.length} Order(s)
-                </span>
-              </button>
-
-              <button id="pharmacy-btn-open-custom-modal" class="px-5 py-2.5 rounded-2xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-400/30 font-bold text-xs flex items-center justify-center gap-2 transition-all">
-                <i data-lucide="plus-circle" class="w-4 h-4 text-amber-300"></i>
-                <span>+ Request Custom Medicine</span>
-              </button>
+              </div>
             </div>
+
           </div>
         </div>
 
@@ -2992,23 +3010,23 @@
              ACTIVE DOCTOR'S PRESCRIPTIONS SYNC BANNER
              ========================================== -->
         ${uniqueRxs.length > 0 ? `
-          <div class="p-5 md:p-6 rounded-3xl bg-gradient-to-br from-emerald-50 via-white to-teal-50 border-2 border-emerald-300 shadow-md flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+          <div class="p-5 md:p-6 rounded-3xl bg-white border border-slate-200 shadow-sm flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
             <div class="flex items-start gap-4">
-              <div class="w-12 h-12 rounded-2xl bg-[#0CA854] text-white flex items-center justify-center shadow-md shadow-emerald-700/20 flex-shrink-0">
+              <div class="w-12 h-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center shadow-sm flex-shrink-0">
                 <i data-lucide="clipboard-list" class="w-6 h-6"></i>
               </div>
               <div class="space-y-1">
                 <div class="flex items-center gap-2">
                   <h3 class="font-black text-slate-900 text-sm md:text-base">Active Doctor's Digital Prescriptions</h3>
-                  <span class="px-2 py-0.5 rounded bg-emerald-100 text-[#0CA854] text-[10px] font-black uppercase">Linked to OPD Session</span>
+                  <span class="px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-[10px] font-bold uppercase">Linked to OPD Session</span>
                 </div>
                 <p class="text-xs text-slate-600">
-                  Doctor prescribed <span class="font-bold text-slate-900">${uniqueRxs.length} medicine(s)</span> for <span class="font-bold text-emerald-800">${patientName}</span>:
+                  Doctor prescribed <span class="font-bold text-slate-900">${uniqueRxs.length} medicine(s)</span> for <span class="font-bold text-slate-800">${patientName}</span>:
                 </p>
                 <div class="flex flex-wrap gap-2 pt-1">
                   ${uniqueRxs.map(rx => `
-                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white border border-emerald-200 text-slate-800 text-xs font-bold shadow-xs">
-                      <i data-lucide="pill" class="w-3.5 h-3.5 text-[#0CA854]"></i>
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold shadow-xs">
+                      <i data-lucide="pill" class="w-3.5 h-3.5 text-slate-600"></i>
                       <span>${rx.medication}</span>
                       <span class="text-[10px] text-slate-400 font-normal">(${rx.doctorName || 'Doctor'})</span>
                     </span>
@@ -3017,9 +3035,9 @@
               </div>
             </div>
 
-            <button id="pharmacy-btn-add-all-rx" class="w-full lg:w-auto px-6 py-3 rounded-2xl bg-[#0CA854] hover:bg-[#087F3F] text-white font-black text-xs shadow-lg shadow-emerald-700/30 flex items-center justify-center gap-2 flex-shrink-0 transition-all hover:scale-105">
-              <i data-lucide="sparkles" class="w-4 h-4 text-amber-300"></i>
-              <span>⚡ 1-Click Add All Prescribed Meds to Delivery Cart</span>
+            <button id="pharmacy-btn-add-all-rx" class="w-full lg:w-auto px-6 py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs shadow-md flex items-center justify-center gap-2 flex-shrink-0 transition-all hover:scale-102">
+              <i data-lucide="shopping-bag" class="w-4 h-4 text-amber-300"></i>
+              <span>1-Click Add All Prescriptions to Cart</span>
             </button>
           </div>
         ` : ''}
@@ -3075,12 +3093,12 @@
                   return `
                     <button data-category="${cat.id}" class="pharmacy-category-btn flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold whitespace-nowrap transition-all flex-shrink-0 ${
                       isSelected 
-                        ? 'bg-[#0CA854] text-white shadow-md shadow-emerald-700/20 scale-102' 
-                        : 'bg-slate-50 hover:bg-emerald-50 text-slate-700 border border-slate-200/80 hover:border-emerald-200'
+                        ? 'bg-slate-900 text-white shadow-xs scale-102' 
+                        : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'
                     }">
                       <i data-lucide="${cat.icon || 'pill'}" class="w-4 h-4"></i>
                       <span>${cat.name}</span>
-                      <span class="text-[10px] px-1.5 py-0.2 rounded-full ${isSelected ? 'bg-white text-[#0CA854]' : 'bg-slate-200 text-slate-600'}">${catCount}</span>
+                      <span class="text-[10px] px-1.5 py-0.2 rounded-full ${isSelected ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'}">${catCount}</span>
                     </button>
                   `;
                 }).join('')}
@@ -3090,12 +3108,12 @@
             <!-- Medicines Grid -->
             <div>
               <div class="flex items-center justify-between mb-4">
-                <h3 class="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                <h3 class="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
                   <span>Available Medicines</span>
-                  <span class="text-slate-400 font-normal">(${filteredMedicines.length} products found)</span>
+                  <span class="text-slate-500 font-normal">(${filteredMedicines.length} items in hospital catalog)</span>
                 </h3>
 
-                <button id="pharmacy-btn-open-custom-inline" class="text-xs font-bold text-[#0CA854] hover:text-[#087F3F] flex items-center gap-1">
+                <button id="pharmacy-btn-open-custom-inline" class="text-xs font-bold text-slate-700 hover:text-slate-900 flex items-center gap-1">
                   <i data-lucide="plus" class="w-3.5 h-3.5"></i> Can't find medicine? Request Custom
                 </button>
               </div>
@@ -3109,7 +3127,7 @@
                   <p class="text-xs text-slate-500 max-w-md mx-auto">
                     You can request any doctor-prescribed or special medicine through our direct hospital pharmacy procurement form.
                   </p>
-                  <button id="pharmacy-btn-empty-custom" class="px-6 py-3 rounded-2xl bg-[#0CA854] text-white font-bold text-xs shadow-md">
+                  <button id="pharmacy-btn-empty-custom" class="px-6 py-3 rounded-2xl bg-slate-900 text-white font-bold text-xs shadow-md">
                     + Request This Medicine for Home Delivery
                   </button>
                 </div>
@@ -3121,10 +3139,10 @@
                     const discountPercent = Math.round(((med.mrp - med.price) / med.mrp) * 100);
 
                     return `
-                      <div class="bg-white rounded-3xl border border-slate-200 hover:border-emerald-300 shadow-sm hover:shadow-md transition-all flex flex-col justify-between overflow-hidden group">
+                      <div class="bg-white rounded-3xl border border-slate-200 hover:border-slate-400 shadow-sm hover:shadow-md transition-all flex flex-col justify-between overflow-hidden group">
                         
                         <!-- Top Image & Badges -->
-                        <div class="relative h-40 bg-slate-50 overflow-hidden border-b border-slate-100 flex items-center justify-center p-3">
+                        <div class="relative h-44 bg-slate-50 overflow-hidden border-b border-slate-100 flex items-center justify-center p-4">
                           <img src="${med.image}" alt="${med.name}" class="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300" onerror="this.src='https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400&auto=format&fit=crop&q=80'" />
                           
                           <!-- Top Badges -->
@@ -3134,14 +3152,14 @@
                                 Rx Required
                               </span>
                             ` : `
-                              <span class="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] font-bold uppercase tracking-wider">
+                              <span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-800 border border-slate-200 text-[10px] font-bold uppercase tracking-wider">
                                 OTC
                               </span>
                             `}
                           </div>
 
                           <div class="absolute top-3 right-3">
-                            <span class="px-2 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-black shadow-xs">
+                            <span class="px-2 py-0.5 rounded-full bg-slate-900 text-white text-[10px] font-bold shadow-xs">
                               ${discountPercent}% OFF
                             </span>
                           </div>
@@ -3151,7 +3169,7 @@
                         <div class="p-4 space-y-3 flex-1 flex flex-col justify-between">
                           <div class="space-y-1.5">
                             <div class="flex items-center justify-between text-[11px] text-slate-500">
-                              <span class="font-semibold text-emerald-700">${med.brand}</span>
+                              <span class="font-semibold text-slate-800">${med.brand}</span>
                               <span>${med.form}</span>
                             </div>
 
@@ -3172,23 +3190,23 @@
                                 <span class="text-base font-black text-slate-900">₹${med.price.toFixed(2)}</span>
                                 <span class="text-xs text-slate-400 line-through">₹${med.mrp.toFixed(2)}</span>
                               </div>
-                              <span class="text-[10px] font-bold text-emerald-600 flex items-center gap-1">
-                                <i data-lucide="check" class="w-3 h-3"></i> In Stock
+                              <span class="text-[10px] font-bold text-slate-600 flex items-center gap-1">
+                                <i data-lucide="check-circle" class="w-3.5 h-3.5 text-slate-800"></i> In Stock
                               </span>
                             </div>
 
                             ${qtyInCart > 0 ? `
-                              <div class="flex items-center justify-between bg-emerald-50 rounded-2xl p-1 border border-emerald-200">
-                                <button data-med-id="${med.id}" class="pharmacy-btn-decrease-qty w-8 h-8 rounded-xl bg-white text-emerald-800 font-black flex items-center justify-center hover:bg-emerald-100 shadow-xs">
+                              <div class="flex items-center justify-between bg-slate-100 rounded-2xl p-1 border border-slate-200">
+                                <button data-med-id="${med.id}" class="pharmacy-btn-decrease-qty w-8 h-8 rounded-xl bg-white text-slate-800 font-black flex items-center justify-center hover:bg-slate-200 shadow-xs">
                                   -
                                 </button>
-                                <span class="text-xs font-black text-emerald-900 px-2">${qtyInCart} in cart</span>
-                                <button data-med-id="${med.id}" class="pharmacy-btn-increase-qty w-8 h-8 rounded-xl bg-[#0CA854] text-white font-black flex items-center justify-center hover:bg-[#087F3F] shadow-xs">
+                                <span class="text-xs font-black text-slate-900 px-2">${qtyInCart} in cart</span>
+                                <button data-med-id="${med.id}" class="pharmacy-btn-increase-qty w-8 h-8 rounded-xl bg-slate-900 text-white font-black flex items-center justify-center hover:bg-slate-800 shadow-xs">
                                   +
                                 </button>
                               </div>
                             ` : `
-                              <button data-med-id="${med.id}" class="pharmacy-btn-add-to-cart w-full py-2.5 rounded-2xl bg-slate-900 hover:bg-[#0CA854] text-white font-bold text-xs shadow-md transition-colors flex items-center justify-center gap-1.5">
+                              <button data-med-id="${med.id}" class="pharmacy-btn-add-to-cart w-full py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-sm transition-colors flex items-center justify-center gap-1.5">
                                 <i data-lucide="plus" class="w-4 h-4"></i>
                                 <span>Add to Cart</span>
                               </button>
