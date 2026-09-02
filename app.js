@@ -28,6 +28,8 @@
       isScanning: false,
       isRedFlagTriggered: false,
       recognition: null,
+      simTimeout: null,
+      useSimulationFallback: false,
       patient: {
         name: '',
         age: '',
@@ -99,87 +101,133 @@
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
       console.warn('Web Speech API not available natively; using simulation mode.');
+      state.kiosk.useSimulationFallback = true;
       return;
     }
 
-    state.kiosk.recognition = new SpeechRecognition();
-    state.kiosk.recognition.continuous = true;
-    state.kiosk.recognition.interimResults = true;
+    try {
+      state.kiosk.recognition = new SpeechRecognition();
+      state.kiosk.recognition.continuous = true;
+      state.kiosk.recognition.interimResults = true;
 
-    state.kiosk.recognition.onstart = function() {
-      state.kiosk.isListening = true;
-      renderKioskVoiceUI();
-    };
+      state.kiosk.recognition.onstart = function() {
+        state.kiosk.isListening = true;
+        renderKioskVoiceUI();
+      };
 
-    state.kiosk.recognition.onresult = function(event) {
-      let finalTranscript = '';
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
-        if (event.results[i].isFinal) {
-          finalTranscript += event.results[i][0].transcript;
+      state.kiosk.recognition.onresult = function(event) {
+        let finalTranscript = '';
+        let interimTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          const text = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += text + ' ';
+          } else {
+            interimTranscript += text;
+          }
         }
-      }
-      if (finalTranscript) {
-        const existing = state.kiosk.patient.chiefComplaint ? state.kiosk.patient.chiefComplaint + ' ' : '';
-        state.kiosk.patient.chiefComplaint = existing + finalTranscript;
-        if ($('#kiosk-complaint-input')) {
-          $('#kiosk-complaint-input').value = state.kiosk.patient.chiefComplaint;
+
+        if (finalTranscript) {
+          const existing = state.kiosk.patient.chiefComplaint ? state.kiosk.patient.chiefComplaint.trim() + ' ' : '';
+          state.kiosk.patient.chiefComplaint = (existing + finalTranscript).trim();
+          if ($('#kiosk-complaint-input')) {
+            $('#kiosk-complaint-input').value = state.kiosk.patient.chiefComplaint;
+          }
+          checkRedFlagEmergencyRules(state.kiosk.patient.chiefComplaint);
         }
-        checkRedFlagEmergencyRules(state.kiosk.patient.chiefComplaint);
-      }
-    };
 
-    state.kiosk.recognition.onerror = function(event) {
-      console.error('Speech recognition error:', event.error);
-      state.kiosk.isListening = false;
-      renderKioskVoiceUI();
-    };
+        if (interimTranscript) {
+          const existing = state.kiosk.patient.chiefComplaint ? state.kiosk.patient.chiefComplaint.trim() + ' ' : '';
+          const liveDisplay = (existing + interimTranscript).trim();
+          if ($('#kiosk-complaint-input')) {
+            $('#kiosk-complaint-input').value = liveDisplay;
+          }
+          renderKioskVoiceLiveStatus(interimTranscript);
+        }
+      };
 
-    state.kiosk.recognition.onend = function() {
-      state.kiosk.isListening = false;
-      renderKioskVoiceUI();
-    };
+      state.kiosk.recognition.onerror = function(event) {
+        console.warn('Speech recognition error:', event.error);
+        state.kiosk.isListening = false;
+        renderKioskVoiceUI();
+
+        if (event.error === 'not-allowed' || event.error === 'service-not-allowed' || event.error === 'audio-capture') {
+          state.kiosk.useSimulationFallback = true;
+          const isHi = state.kiosk.lang === 'hi';
+          const msg = isHi 
+            ? 'माइक्रोफ़ोन एक्सेस की अनुमति नहीं मिली या सेवा अनुपलब्ध है। एआई वॉयस सिमुलेशन मोड शुरू किया जा रहा है।'
+            : 'Microphone access denied or service unavailable. Switching to AI Voice Simulation Mode.';
+          console.info(msg);
+          simulateVoiceInput();
+        } else if (event.error === 'network') {
+          state.kiosk.useSimulationFallback = true;
+          simulateVoiceInput();
+        }
+      };
+
+      state.kiosk.recognition.onend = function() {
+        state.kiosk.isListening = false;
+        renderKioskVoiceUI();
+      };
+    } catch (err) {
+      console.warn('SpeechRecognition initialization error:', err);
+      state.kiosk.useSimulationFallback = true;
+    }
   }
 
   function toggleVoiceInput() {
+    if (state.kiosk.simTimeout) {
+      clearTimeout(state.kiosk.simTimeout);
+      state.kiosk.simTimeout = null;
+    }
+
     if (state.kiosk.isListening) {
       if (state.kiosk.recognition) {
-        state.kiosk.recognition.stop();
+        try { state.kiosk.recognition.stop(); } catch(e){}
       }
       state.kiosk.isListening = false;
       renderKioskVoiceUI();
     } else {
+      if (state.kiosk.useSimulationFallback || !state.kiosk.recognition) {
+        simulateVoiceInput();
+        return;
+      }
       const langCode = state.kiosk.lang === 'hi' ? 'hi-IN' : 'en-IN';
-      if (state.kiosk.recognition) {
-        try {
-          state.kiosk.recognition.lang = langCode;
-          state.kiosk.recognition.start();
-        } catch (e) {
-          simulateVoiceInput();
-        }
-      } else {
+      try {
+        state.kiosk.recognition.lang = langCode;
+        state.kiosk.recognition.start();
+      } catch (e) {
+        console.warn('SpeechRecognition start exception, switching to simulation fallback:', e);
         simulateVoiceInput();
       }
     }
   }
 
   function simulateVoiceInput() {
+    if (state.kiosk.simTimeout) {
+      clearTimeout(state.kiosk.simTimeout);
+      state.kiosk.simTimeout = null;
+    }
+
     state.kiosk.isListening = true;
     renderKioskVoiceUI();
     
     speakVoiceFeedback(state.kiosk.lang === 'hi' ? 'कृपया अपनी समस्या बताएं, हम सुन रहे हैं।' : 'Please describe your symptoms, we are listening.');
 
-    setTimeout(function() {
+    state.kiosk.simTimeout = setTimeout(function() {
       if (!state.kiosk.isListening) return;
       const sampleHindi = "मुझे कल रात से सीने में तेज भारीपन, सांस लेने में तकलीफ और पसीना आ रहा है।";
       const sampleEnglish = "I have severe retrosternal chest pain with shortness of breath and sweating since morning.";
       const phrase = state.kiosk.lang === 'hi' ? sampleHindi : sampleEnglish;
       
-      const existing = state.kiosk.patient.chiefComplaint ? state.kiosk.patient.chiefComplaint + '. ' : '';
-      state.kiosk.patient.chiefComplaint = existing + phrase;
+      const existing = state.kiosk.patient.chiefComplaint ? state.kiosk.patient.chiefComplaint.trim() + '. ' : '';
+      state.kiosk.patient.chiefComplaint = (existing + phrase).trim();
       if ($('#kiosk-complaint-input')) {
         $('#kiosk-complaint-input').value = state.kiosk.patient.chiefComplaint;
       }
       state.kiosk.isListening = false;
+      state.kiosk.simTimeout = null;
       renderKioskVoiceUI();
       checkRedFlagEmergencyRules(phrase);
     }, 2500);
@@ -190,8 +238,20 @@
     try {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = state.kiosk.lang === 'hi' ? 'hi-IN' : 'en-US';
+      const targetLang = state.kiosk.lang === 'hi' ? 'hi-IN' : 'en-US';
+      utterance.lang = targetLang;
       utterance.rate = 0.95;
+
+      const voices = window.speechSynthesis.getVoices();
+      if (voices && voices.length > 0) {
+        const match = voices.find(v => v.lang === targetLang || v.lang.startsWith(state.kiosk.lang));
+        if (match) utterance.voice = match;
+      }
+
+      state.kiosk.isSpeaking = true;
+      utterance.onend = function() { state.kiosk.isSpeaking = false; };
+      utterance.onerror = function() { state.kiosk.isSpeaking = false; };
+
       window.speechSynthesis.speak(utterance);
     } catch(e) {
       console.log('TTS error:', e);
@@ -1992,27 +2052,25 @@
                   ? 'bg-red-500 shadow-xl shadow-red-500/50 scale-110' 
                   : 'bg-[#0CA854] hover:bg-[#087F3F] shadow-lg shadow-emerald-500/40'
               }">
-                <i data-lucide="${state.kiosk.isListening ? 'mic-off' : 'mic'}" class="w-10 h-10 text-white"></i>
+                <i id="voice-mic-icon" data-lucide="${state.kiosk.isListening ? 'mic-off' : 'mic'}" class="w-10 h-10 text-white"></i>
               </button>
             </div>
 
             <div>
-              <div class="text-base font-bold">
+              <div id="voice-status-text" class="text-base font-bold transition-all">
                 ${state.kiosk.isListening ? getI18n('listening') : getI18n('tapMicToSpeak')}
               </div>
               <div class="text-xs text-slate-300 mt-1">Supports Indian English, Hindi & Hinglish</div>
             </div>
 
-            ${state.kiosk.isListening ? `
-              <div class="flex items-center gap-1.5 h-8">
-                <span class="w-1.5 bg-emerald-400 rounded-full wave-bar"></span>
-                <span class="w-1.5 bg-emerald-400 rounded-full wave-bar"></span>
-                <span class="w-1.5 bg-emerald-400 rounded-full wave-bar"></span>
-                <span class="w-1.5 bg-emerald-400 rounded-full wave-bar"></span>
-                <span class="w-1.5 bg-emerald-400 rounded-full wave-bar"></span>
-                <span class="w-1.5 bg-emerald-400 rounded-full wave-bar"></span>
-              </div>
-            ` : ''}
+            <div id="voice-waveform-container" class="h-8 ${state.kiosk.isListening ? 'flex' : 'hidden'} items-center gap-1.5">
+              <span class="w-1.5 bg-emerald-400 rounded-full wave-bar"></span>
+              <span class="w-1.5 bg-emerald-400 rounded-full wave-bar"></span>
+              <span class="w-1.5 bg-emerald-400 rounded-full wave-bar"></span>
+              <span class="w-1.5 bg-emerald-400 rounded-full wave-bar"></span>
+              <span class="w-1.5 bg-emerald-400 rounded-full wave-bar"></span>
+              <span class="w-1.5 bg-emerald-400 rounded-full wave-bar"></span>
+            </div>
           </div>
 
           <div class="space-y-2">
@@ -2736,16 +2794,68 @@
   function renderKioskVoiceUI() {
     const pulse = $('#voice-pulse-ring');
     const micBtn = $('#voice-mic-btn');
-    if (pulse && micBtn) {
+    const statusText = $('#voice-status-text');
+    const waveform = $('#voice-waveform-container');
+    const micIcon = $('#voice-mic-icon');
+    const complaintInput = $('#kiosk-complaint-input');
+
+    const isHi = state.kiosk.lang === 'hi';
+    const listeningText = isHi ? 'सुन रहे हैं... बोलिए (Listening...)' : 'Listening... Speak now';
+    const idleText = isHi ? 'बोलकर समस्या बताने के लिए माइक्रोफ़ोन दबाएं' : 'Tap Microphone to Speak Symptoms';
+
+    if (micBtn) {
+      if (state.kiosk.isListening) {
+        micBtn.classList.add('bg-red-500', 'shadow-red-500/50', 'scale-110');
+        micBtn.classList.remove('bg-[#0CA854]', 'hover:bg-[#087F3F]');
+      } else {
+        micBtn.classList.remove('bg-red-500', 'shadow-red-500/50', 'scale-110');
+        micBtn.classList.add('bg-[#0CA854]', 'hover:bg-[#087F3F]');
+      }
+    }
+
+    if (pulse) {
       if (state.kiosk.isListening) {
         pulse.classList.remove('hidden');
-        micBtn.classList.add('bg-red-500', 'scale-110');
-        micBtn.classList.remove('bg-[#0CA854]');
+        pulse.classList.add('voice-ripple');
       } else {
         pulse.classList.add('hidden');
-        micBtn.classList.remove('bg-red-500', 'scale-110');
-        micBtn.classList.add('bg-[#0CA854]');
+        pulse.classList.remove('voice-ripple');
       }
+    }
+
+    if (statusText) {
+      statusText.textContent = state.kiosk.isListening ? listeningText : idleText;
+      statusText.className = state.kiosk.isListening ? 'text-base font-bold text-emerald-400 animate-pulse transition-all' : 'text-base font-bold text-white transition-all';
+    }
+
+    if (waveform) {
+      if (state.kiosk.isListening) {
+        waveform.classList.remove('hidden');
+        waveform.classList.add('flex');
+      } else {
+        waveform.classList.add('hidden');
+        waveform.classList.remove('flex');
+      }
+    }
+
+    if (micIcon) {
+      micIcon.setAttribute('data-lucide', state.kiosk.isListening ? 'mic-off' : 'mic');
+      if (window.lucide) window.lucide.createIcons();
+    }
+
+    if (complaintInput) {
+      if (state.kiosk.isListening) {
+        complaintInput.classList.add('ring-2', 'ring-emerald-500', 'bg-emerald-50/10');
+      } else {
+        complaintInput.classList.remove('ring-2', 'ring-emerald-500', 'bg-emerald-50/10');
+      }
+    }
+  }
+
+  function renderKioskVoiceLiveStatus(interim) {
+    const statusText = $('#voice-status-text');
+    if (statusText && interim) {
+      statusText.textContent = `Hearing: "${interim}"...`;
     }
   }
 
